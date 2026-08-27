@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>LÁMPARA - Juego Bíblico de Génesis (RVR1960)</title>
     <!-- Cliente de Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -11,7 +11,7 @@
             margin: 0; 
             padding: 0; 
             box-sizing: border-box; 
-            touch-action: manipulation;
+            touch-action: none;
             user-select: none;
             -webkit-user-select: none;
             -webkit-tap-highlight-color: transparent;
@@ -29,6 +29,9 @@
         html, body {
             width: 100%;
             height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
             overflow: hidden;
             background: #05050d;
             font-family: 'Georgia', 'Times New Roman', serif;
@@ -42,26 +45,17 @@
             height: 100dvh;
             max-width: 800px;
             max-height: 600px;
-            aspect-ratio: 4/3;
             background: #000;
             box-shadow: 0 0 50px rgba(255, 200, 50, 0.15);
             overflow: hidden;
-        }
-        @media (max-aspect-ratio: 4/3) {
-            #gameContainer {
-                width: 100vw;
-                height: 75vw;
-            }
-        }
-        @media (min-aspect-ratio: 4/3) {
-            #gameContainer {
-                height: 100dvh;
-                width: 133.33dvh;
-            }
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         canvas {
             width: 100%;
             height: 100%;
+            object-fit: contain;
             display: block;
             background: #000;
             cursor: pointer;
@@ -87,9 +81,10 @@
             align-items: center;
             z-index: 10;
             opacity: 0;
-            transition: opacity 0.4s ease;
+            transition: opacity 0.3s ease;
             backdrop-filter: blur(4px);
-            padding: 10px;
+            padding: 12px;
+            touch-action: auto;
         }
         #dialogOverlay.active {
             display: flex;
@@ -98,46 +93,47 @@
         .dialog-box {
             background: linear-gradient(180deg, #f5e6c8 0%, #e8d5a3 100%);
             border: 3px solid var(--gold);
-            border-radius: 18px;
-            padding: 20px;
+            border-radius: 16px;
+            padding: 16px;
             width: 100%;
-            max-width: 460px;
+            max-width: 420px;
             text-align: center;
             box-shadow: 0 0 35px rgba(201,168,76,0.5);
-            transform: translateY(15px) scale(0.96);
+            transform: translateY(10px) scale(0.96);
             opacity: 0;
-            transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.35s ease;
-            max-height: 90dvh;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+            max-height: 92dvh;
             overflow-y: auto;
+            touch-action: pan-y;
         }
         #dialogOverlay.active .dialog-box {
             transform: translateY(0) scale(1);
             opacity: 1;
         }
         #dialogOverlay.closing .dialog-box {
-            transform: translateY(-15px) scale(0.96);
+            transform: translateY(-10px) scale(0.96);
             opacity: 0;
         }
         .dialog-box h2 { 
             color: var(--brown); 
-            font-size: 1.3em; 
-            margin-bottom: 8px;
+            font-size: 1.2em; 
+            margin-bottom: 6px;
         }
         .dialog-box p.description {
             color: #4a3324;
-            font-size: 0.95em;
-            line-height: 1.45;
-            margin: 10px 0 15px 0;
+            font-size: 0.88em;
+            line-height: 1.35;
+            margin: 8px 0 12px 0;
             background: rgba(255,255,255,0.55);
-            padding: 10px;
+            padding: 8px;
             border-radius: 8px;
             border-left: 4px solid var(--gold);
         }
         .dialog-box input {
-            width: 90%;
+            width: 100%;
             padding: 10px;
-            margin: 6px 0;
-            font-size: 1em;
+            margin: 5px 0;
+            font-size: 0.95em;
             border: 2px solid var(--gold);
             border-radius: 8px;
             background: #fff;
@@ -145,21 +141,23 @@
             font-family: 'Georgia', serif;
             outline: none;
             text-align: center;
+            touch-action: auto;
         }
         .dialog-box button {
             background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold) 50%, var(--gold-dark) 100%);
             color: #1a1a2e;
             border: 2px solid var(--gold-dark);
-            padding: 10px 20px;
-            font-size: 1em;
-            border-radius: 10px;
+            padding: 10px 16px;
+            font-size: 0.95em;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
-            margin-top: 8px;
+            margin-top: 6px;
             transition: all 0.2s;
             font-family: 'Georgia', serif;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.25);
             width: 100%;
+            touch-action: auto;
         }
         .dialog-box button:active { 
             transform: scale(0.98);
@@ -168,16 +166,16 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin: 6px 0 4px 0;
+            margin: 4px 0;
             font-weight: bold;
             color: var(--brown);
         }
         .timer-badge {
             background: var(--brown);
             color: var(--gold-light);
-            padding: 3px 8px;
-            border-radius: 15px;
-            font-size: 0.85em;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
             display: flex;
             align-items: center;
             gap: 4px;
@@ -189,15 +187,15 @@
         }
         @keyframes pulse {
             from { transform: scale(1); }
-            to { transform: scale(1.06); }
+            to { transform: scale(1.05); }
         }
         .timer-bar {
             width: 100%;
-            height: 5px;
+            height: 4px;
             background: #d4c4a0;
-            border-radius: 3px;
+            border-radius: 2px;
             overflow: hidden;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
         .timer-fill {
             height: 100%;
@@ -207,10 +205,10 @@
         }
         .progress-bar {
             width: 100%;
-            height: 5px;
+            height: 4px;
             background: #d4c4a0;
-            border-radius: 3px;
-            margin: 5px 0;
+            border-radius: 2px;
+            margin: 4px 0;
             overflow: hidden;
         }
         .progress-fill {
@@ -222,19 +220,20 @@
             display: flex;
             flex-direction: column;
             gap: 6px;
-            margin-top: 8px;
+            margin-top: 6px;
         }
         .option-btn {
             background: #fff;
             border: 2px solid var(--gold);
-            border-radius: 10px;
-            padding: 8px 12px;
-            font-size: 0.9em;
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 0.85em;
             cursor: pointer;
             transition: all 0.2s ease;
             font-family: 'Georgia', serif;
             color: #333;
             text-align: left;
+            touch-action: auto;
         }
         .option-btn.correct { 
             background: linear-gradient(180deg, #66BB6A 0%, var(--green) 100%); 
@@ -254,42 +253,43 @@
             75% { transform: translateX(4px); }
         }
         .score-display { 
-            font-size: 1em; 
+            font-size: 0.9em; 
             color: var(--brown); 
-            margin: 4px 0; 
+            margin: 2px 0; 
             font-weight: bold;
         }
         .verse-display {
             background: #fff;
             border: 2px solid var(--gold);
-            border-radius: 10px;
-            padding: 10px;
-            margin: 6px 0;
+            border-radius: 8px;
+            padding: 8px;
+            margin: 4px 0;
             font-style: italic;
             color: #333;
-            font-size: 0.9em;
-            line-height: 1.4;
+            font-size: 0.85em;
+            line-height: 1.35;
         }
         .verse-missing { color: var(--red); font-weight: bold; text-decoration: underline; }
         .leaderboard {
             background: #fff;
             border: 2px solid var(--gold);
-            border-radius: 10px;
-            padding: 8px;
-            margin: 10px 0;
-            max-height: 180px;
+            border-radius: 8px;
+            padding: 6px;
+            margin: 8px 0;
+            max-height: 150px;
             overflow-y: auto;
+            touch-action: pan-y;
         }
         .leaderboard table { width: 100%; border-collapse: collapse; }
-        .leaderboard th { background: var(--gold); color: #1a1a2e; padding: 5px; font-size: 0.8em; }
-        .leaderboard td { padding: 5px; font-size: 0.78em; border-bottom: 1px solid #ddd; color: #333; }
+        .leaderboard th { background: var(--gold); color: #1a1a2e; padding: 4px; font-size: 0.75em; }
+        .leaderboard td { padding: 4px; font-size: 0.75em; border-bottom: 1px solid #ddd; color: #333; }
         .status-badge {
             background: #e0c060;
             color: #5a3d2b;
-            padding: 3px 8px;
-            border-radius: 6px;
-            font-size: 0.8em;
-            margin-bottom: 6px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            margin-bottom: 4px;
             display: inline-block;
             font-weight: bold;
         }
@@ -306,6 +306,25 @@
 
     <script>
         window.addEventListener('DOMContentLoaded', () => {
+            // ================== AJUSTE RESPONSIVO DE PANTALLA ==================
+            function adjustContainer() {
+                const container = document.getElementById('gameContainer');
+                const windowWidth = window.innerWidth;
+                const windowHeight = window.innerHeight;
+                const targetRatio = 4 / 3;
+                const windowRatio = windowWidth / windowHeight;
+
+                if (windowRatio > targetRatio) {
+                    container.style.height = windowHeight + 'px';
+                    container.style.width = (windowHeight * targetRatio) + 'px';
+                } else {
+                    container.style.width = windowWidth + 'px';
+                    container.style.height = (windowWidth / targetRatio) + 'px';
+                }
+            }
+            adjustContainer();
+            window.addEventListener('resize', adjustContainer);
+
             // ================== CONFIGURACIÓN SUPABASE ==================
             const SUPABASE_URL = "https://ayzdvkitozqtvvlxphfl.supabase.co";
             const SUPABASE_ANON_KEY = "sb_publishable_Z1JAN0l80o7sQFqRMVDNOw_poV3Ed3O";
@@ -324,7 +343,7 @@
             let timeLeft = QUESTION_TIME_LIMIT;
             let timerInterval = null;
 
-            // ================== FUNCIONES BASE DE DATOS ==================
+            // ================== BASE DE DATOS ==================
             async function saveSupabaseScore(name, age, score, medal) {
                 try {
                     const { data, error } = await supabaseClient
@@ -444,7 +463,7 @@
                 } catch(e) {}
             }
 
-            // ================== BANCOS DE PREGUNTAS (REINA VALERA 1960) ==================
+            // ================== PREGUNTAS ==================
             const poolEtapa1 = [
                 { question: "¿De qué árbol prohibió Dios comer al hombre en el huerto de Edén?", options: ["Del árbol de la vida", "Del árbol de la ciencia del bien y del mal", "Del árbol de la sabiduría", "Del árbol del conocimiento divino"], correct: 1 },
                 { question: "¿Qué puso Jehová sobre Caín para que no lo matase cualquiera que le hallara?", options: ["Una señal", "Una marca en la frente", "Una túnica de protección", "Un sello de fuego"], correct: 0 },
@@ -507,7 +526,7 @@
             let canClick = true;
             let celebrationAnimTime = 0;
 
-            // ================== DIBUJO Y EFECTOS ==================
+            // ================== DIBUJO Y RENDERIZADO ==================
             function createSpark() {
                 return {
                     x: W / 2 + (Math.random() - 0.5) * 20,
@@ -673,21 +692,21 @@
                     if (titleAlpha > 0) {
                         ctx.save();
                         ctx.globalAlpha = Math.min(1, titleAlpha);
-                        ctx.fillStyle = '#FFD700'; ctx.font = 'bold 64px Georgia'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                        ctx.shadowColor = '#FF8C00'; ctx.shadowBlur = 25;
-                        ctx.fillText('LÁMPARA', W / 2, H * 0.22);
+                        ctx.fillStyle = '#FFD700'; ctx.font = 'bold 56px Georgia'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                        ctx.shadowColor = '#FF8C00'; ctx.shadowBlur = 20;
+                        ctx.fillText('LÁMPARA', W / 2, H * 0.20);
                         ctx.shadowBlur = 0;
-                        ctx.fillStyle = '#FFF8DC'; ctx.font = '22px Georgia';
-                        ctx.fillText('Juego Bíblico - Génesis (RVR1960)', W / 2, H * 0.32);
-                        ctx.fillStyle = 'rgba(255, 200, 100, 0.6)'; ctx.font = 'italic 14px Georgia';
-                        ctx.fillText('"Lámpara es a mis pies tu palabra, y lumbrera a mi camino" - Salmo 119:105', W / 2, H * 0.38);
+                        ctx.fillStyle = '#FFF8DC'; ctx.font = '20px Georgia';
+                        ctx.fillText('Juego Bíblico - Génesis (RVR1960)', W / 2, H * 0.30);
+                        ctx.fillStyle = 'rgba(255, 200, 100, 0.6)'; ctx.font = 'italic 13px Georgia';
+                        ctx.fillText('"Lámpara es a mis pies tu palabra, y lumbrera a mi camino" - Salmo 119:105', W / 2, H * 0.36);
                         ctx.restore();
                     }
 
                     if (flameIntensity >= 0.8) {
                         const blink = Math.sin(flameFlicker * 3) * 0.3 + 0.7;
                         ctx.save(); ctx.globalAlpha = blink;
-                        ctx.fillStyle = '#FFF'; ctx.font = '18px Georgia'; ctx.textAlign = 'center';
+                        ctx.fillStyle = '#FFF'; ctx.font = '16px Georgia'; ctx.textAlign = 'center';
                         ctx.fillText('✦ Toca la pantalla para comenzar ✦', W / 2, H * 0.78);
                         ctx.restore();
                     }
@@ -707,23 +726,23 @@
                     drawJumpingPerson(W * 0.30, H * 0.58);
                     drawAnimatedMedal(medalType, W * 0.70, H * 0.45);
 
-                    ctx.fillStyle = '#FFD700'; ctx.font = 'bold 36px Georgia'; ctx.textAlign = 'center';
+                    ctx.fillStyle = '#FFD700'; ctx.font = 'bold 34px Georgia'; ctx.textAlign = 'center';
                     ctx.fillText('¡FELICIDADES!', W / 2, H * 0.12);
                     
-                    ctx.fillStyle = '#FFF'; ctx.font = 'bold 24px Georgia'; 
+                    ctx.fillStyle = '#FFF'; ctx.font = 'bold 22px Georgia'; 
                     ctx.fillText(`${playerName}`, W / 2, H * 0.20);
                     
-                    ctx.fillStyle = '#E0C060'; ctx.font = 'bold 28px Georgia'; 
+                    ctx.fillStyle = '#E0C060'; ctx.font = 'bold 26px Georgia'; 
                     ctx.fillText(`${totalScore} / 75 PUNTOS`, W / 2, H * 0.27);
 
                     ctx.save();
-                    ctx.fillStyle = '#FFF8DC'; ctx.font = 'italic 16px Georgia';
+                    ctx.fillStyle = '#FFF8DC'; ctx.font = 'italic 15px Georgia';
                     ctx.shadowColor = 'rgba(255, 215, 0, 0.4)'; ctx.shadowBlur = 10;
                     ctx.fillText(quote, W / 2, H * 0.72);
                     ctx.restore();
 
                     if (isPracticeMode) {
-                        ctx.fillStyle = '#A0822A'; ctx.font = '14px Georgia';
+                        ctx.fillStyle = '#A0822A'; ctx.font = '13px Georgia';
                         ctx.fillText('(Modo Práctica - Tu primer puntaje no ha cambiado)', W / 2, H * 0.78);
                     }
 
@@ -737,7 +756,7 @@
                 animationId = requestAnimationFrame(render);
             }
 
-            // ================== DIÁLOGOS Y VENTANAS ==================
+            // ================== DIÁLOGOS Y NAVEGACIÓN ==================
             function showDialog(htmlContent) {
                 dialogOverlay.classList.remove('closing');
                 dialogBox.innerHTML = htmlContent;
@@ -752,7 +771,7 @@
                     dialogOverlay.classList.remove('closing');
                     dialogBox.innerHTML = '';
                     if (callback) callback();
-                }, 350);
+                }, 300);
             }
 
             function showStageIntro(title, description, onStartCallback) {
@@ -770,7 +789,7 @@
             function showRegistrationDialog() {
                 showDialog(`
                     <h2>🕯️ LÁMPARA</h2>
-                    <p style="color:#5a3d2b; margin-bottom:10px; font-size:1em;">Ingresa tus datos para empezar:</p>
+                    <p style="color:#5a3d2b; margin-bottom:8px; font-size:0.95em;">Ingresa tus datos para empezar:</p>
                     <input type="text" id="nameInput" placeholder="Tu nombre" maxlength="20" autocomplete="off">
                     <input type="number" id="ageInput" placeholder="Tu edad" min="5" max="120" autocomplete="off">
                     <br>
@@ -780,7 +799,6 @@
 
                 const nameInput = document.getElementById('nameInput');
                 const ageInput = document.getElementById('ageInput');
-                setTimeout(() => nameInput.focus(), 100);
 
                 document.getElementById('startBtn').onclick = async () => {
                     const name = nameInput.value.trim();
@@ -839,7 +857,7 @@
             function prepareEtapa1() {
                 showStageIntro(
                     "ETAPA 1: CONOCIMIENTO BÍBLICO",
-                    "Demuestra tus conocimientos generales sobre los acontecimientos, personajes y datos clave según la versión Reina-Valera 1960. ¡Tienes 15 segundos por pregunta!",
+                    "Demuestra tus conocimientos generales sobre los acontecimientos y datos clave de Génesis (RVR1960). ¡Tienes 15 segundos por pregunta!",
                     startEtapa1
                 );
             }
@@ -852,7 +870,7 @@
             function prepareEtapa2() {
                 showStageIntro(
                     "ETAPA 2: ESGRIMA BÍBLICO",
-                    "Pon a prueba tu agilidad mental identificando exactamente en qué capítulo de Génesis ocurren los sucesos narrados.",
+                    "Identifica en qué capítulo específico de Génesis ocurre cada acontecimiento.",
                     startEtapa2
                 );
             }
@@ -865,7 +883,7 @@
             function prepareEtapa3() {
                 showStageIntro(
                     "ETAPA 3: COMPLETA EL VERSÍCULO",
-                    "Se te presentarán pasajes clave de Génesis al pie de la letra según la versión Reina-Valera 1960. Selecciona la palabra exacta que falta.",
+                    "Completa la palabra faltante de los pasajes de Génesis en la versión Reina-Valera 1960.",
                     startEtapa3
                 );
             }
@@ -918,13 +936,13 @@
 
                 let questionHTML = currentEtapa === 6
                     ? `<div class="verse-display">"${q.verse.replace('______', '<span class="verse-missing">______</span>')}"</div>`
-                    : `<p style="color:#333; font-size:1em; margin:6px 0; font-weight:bold; line-height:1.3;">${q.question}</p>`;
+                    : `<p style="color:#333; font-size:0.9em; margin:4px 0; font-weight:bold; line-height:1.25;">${q.question}</p>`;
 
                 showDialog(`
                     <h2 style="color:#5a3d2b;">${etapaTitle}</h2>
                     ${isPracticeMode ? '<div class="status-badge">🎮 Modo Práctica</div>' : ''}
                     <div class="timer-container">
-                        <span style="color:#8B6914; font-size:0.8em;">Pregunta ${currentQuestionIndex + 1} de ${questions.length}</span>
+                        <span style="color:#8B6914; font-size:0.75em;">Pregunta ${currentQuestionIndex + 1} de ${questions.length}</span>
                         <div class="timer-badge" id="timerBadge">⏱️ ${QUESTION_TIME_LIMIT}s</div>
                     </div>
                     <div class="timer-bar"><div class="timer-fill" id="timerFill"></div></div>
@@ -979,10 +997,10 @@
                                 } else if (currentEtapa === 6) {
                                     showFinalScreen();
                                 }
-                            }, 350);
+                            }, 300);
                         }
                     });
-                }, 1600);
+                }, 1500);
             }
 
             async function showFinalScreen() {
@@ -994,8 +1012,8 @@
                 playSound('win');
             }
 
-            // ================== EVENTOS Y RESPONSIVIDAD ==================
-            function handleInteraction() {
+            // ================== EVENTOS Y CONTROLES TÁCTILES ==================
+            function handleInteraction(e) {
                 initAudio();
                 if (!canClick) return;
 

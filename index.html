@@ -2,12 +2,20 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>LÁMPARA - Juego Bíblico</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LÁMPARA - Juego Bíblico de Génesis (RVR1960)</title>
     <!-- Cliente de Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
         :root {
             --gold: #c9a84c;
             --gold-light: #e0c060;
@@ -18,31 +26,38 @@
             --red: #f44336;
             --green: #4CAF50;
         }
-        body {
-            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 50%, #0a0a1a 100%);
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #05050d;
+            font-family: 'Georgia', 'Times New Roman', serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            font-family: 'Georgia', 'Times New Roman', serif;
-            touch-action: manipulation;
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            overflow: hidden;
         }
         #gameContainer {
             position: relative;
-            width: 100%;
+            width: 100vw;
+            height: 100dvh;
             max-width: 800px;
+            max-height: 600px;
             aspect-ratio: 4/3;
             background: #000;
-            border-radius: 15px;
-            box-shadow: 
-                0 0 60px rgba(255, 200, 50, 0.2),
-                0 0 120px rgba(255, 200, 50, 0.1),
-                inset 0 0 60px rgba(0,0,0,0.5);
+            box-shadow: 0 0 50px rgba(255, 200, 50, 0.15);
             overflow: hidden;
+        }
+        @media (max-aspect-ratio: 4/3) {
+            #gameContainer {
+                width: 100vw;
+                height: 75vw;
+            }
+        }
+        @media (min-aspect-ratio: 4/3) {
+            #gameContainer {
+                height: 100dvh;
+                width: 133.33dvh;
+            }
         }
         canvas {
             width: 100%;
@@ -53,9 +68,9 @@
         }
         #developerCredit {
             position: absolute;
-            bottom: 5px;
-            right: 10px;
-            color: rgba(255, 255, 255, 0.4);
+            bottom: 6px;
+            right: 12px;
+            color: rgba(255, 255, 255, 0.45);
             font-size: 11px;
             font-family: 'Georgia', serif;
             z-index: 5;
@@ -72,8 +87,9 @@
             align-items: center;
             z-index: 10;
             opacity: 0;
-            transition: opacity 0.5s ease;
-            backdrop-filter: blur(5px);
+            transition: opacity 0.4s ease;
+            backdrop-filter: blur(4px);
+            padding: 10px;
         }
         #dialogOverlay.active {
             display: flex;
@@ -82,18 +98,16 @@
         .dialog-box {
             background: linear-gradient(180deg, #f5e6c8 0%, #e8d5a3 100%);
             border: 3px solid var(--gold);
-            border-radius: 20px;
-            padding: 25px;
-            width: 90%;
-            max-width: 480px;
+            border-radius: 18px;
+            padding: 20px;
+            width: 100%;
+            max-width: 460px;
             text-align: center;
-            box-shadow: 
-                0 0 40px rgba(201,168,76,0.6),
-                inset 0 2px 10px rgba(255,255,255,0.3);
-            transform: translateY(20px) scale(0.95);
+            box-shadow: 0 0 35px rgba(201,168,76,0.5);
+            transform: translateY(15px) scale(0.96);
             opacity: 0;
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease;
-            max-height: 85vh;
+            transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.35s ease;
+            max-height: 90dvh;
             overflow-y: auto;
         }
         #dialogOverlay.active .dialog-box {
@@ -101,76 +115,72 @@
             opacity: 1;
         }
         #dialogOverlay.closing .dialog-box {
-            transform: translateY(-20px) scale(0.95);
+            transform: translateY(-15px) scale(0.96);
             opacity: 0;
         }
         .dialog-box h2 { 
             color: var(--brown); 
-            font-size: 1.4em; 
-            margin-bottom: 10px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            font-size: 1.3em; 
+            margin-bottom: 8px;
         }
         .dialog-box p.description {
             color: #4a3324;
-            font-size: 1.05em;
-            line-height: 1.5;
-            margin: 15px 0 20px 0;
-            background: rgba(255,255,255,0.5);
-            padding: 12px;
-            border-radius: 10px;
+            font-size: 0.95em;
+            line-height: 1.45;
+            margin: 10px 0 15px 0;
+            background: rgba(255,255,255,0.55);
+            padding: 10px;
+            border-radius: 8px;
             border-left: 4px solid var(--gold);
         }
         .dialog-box input {
-            width: 85%;
-            padding: 12px;
-            margin: 8px 0;
-            font-size: 1.1em;
+            width: 90%;
+            padding: 10px;
+            margin: 6px 0;
+            font-size: 1em;
             border: 2px solid var(--gold);
-            border-radius: 10px;
+            border-radius: 8px;
             background: #fff;
             color: #333;
             font-family: 'Georgia', serif;
             outline: none;
             text-align: center;
-            transition: all 0.3s;
         }
         .dialog-box button {
             background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold) 50%, var(--gold-dark) 100%);
             color: #1a1a2e;
             border: 2px solid var(--gold-dark);
-            padding: 12px 25px;
-            font-size: 1.05em;
-            border-radius: 12px;
+            padding: 10px 20px;
+            font-size: 1em;
+            border-radius: 10px;
             cursor: pointer;
             font-weight: bold;
-            margin-top: 10px;
-            transition: all 0.3s;
+            margin-top: 8px;
+            transition: all 0.2s;
             font-family: 'Georgia', serif;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.25);
             width: 100%;
         }
-        .dialog-box button:hover { 
-            background: linear-gradient(180deg, #e8d060 0%, #d4b45a 50%, #a0822a 100%);
-            transform: translateY(-2px);
+        .dialog-box button:active { 
+            transform: scale(0.98);
         }
-        
         .timer-container {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin: 8px 0 4px 0;
+            margin: 6px 0 4px 0;
             font-weight: bold;
             color: var(--brown);
         }
         .timer-badge {
             background: var(--brown);
             color: var(--gold-light);
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.9em;
+            padding: 3px 8px;
+            border-radius: 15px;
+            font-size: 0.85em;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
         }
         .timer-badge.urgent {
             background: var(--red);
@@ -179,15 +189,15 @@
         }
         @keyframes pulse {
             from { transform: scale(1); }
-            to { transform: scale(1.08); }
+            to { transform: scale(1.06); }
         }
         .timer-bar {
             width: 100%;
-            height: 6px;
+            height: 5px;
             background: #d4c4a0;
             border-radius: 3px;
             overflow: hidden;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         .timer-fill {
             height: 100%;
@@ -195,49 +205,41 @@
             width: 100%;
             transition: width 1s linear, background-color 0.3s;
         }
-        
         .progress-bar {
             width: 100%;
-            height: 6px;
+            height: 5px;
             background: #d4c4a0;
             border-radius: 3px;
-            margin: 6px 0;
+            margin: 5px 0;
             overflow: hidden;
         }
         .progress-fill {
             height: 100%;
             background: linear-gradient(90deg, var(--gold-dark) 0%, var(--gold) 50%, var(--gold-light) 100%);
-            transition: width 0.5s ease;
+            transition: width 0.4s ease;
         }
-
         .options-container {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            margin-top: 10px;
+            gap: 6px;
+            margin-top: 8px;
         }
         .option-btn {
             background: #fff;
             border: 2px solid var(--gold);
-            border-radius: 12px;
-            padding: 10px 15px;
-            font-size: 0.95em;
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 0.9em;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             font-family: 'Georgia', serif;
             color: #333;
             text-align: left;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .option-btn:hover:not(:disabled) { 
-            background: #f8f0d8; 
-            transform: translateX(5px);
         }
         .option-btn.correct { 
             background: linear-gradient(180deg, #66BB6A 0%, var(--green) 100%); 
             color: #fff; 
             border-color: #2E7D32; 
-            transform: scale(1.02);
         }
         .option-btn.incorrect { 
             background: linear-gradient(180deg, #EF5350 0%, var(--red) 100%); 
@@ -245,49 +247,49 @@
             border-color: #c62828; 
             animation: shake 0.4s;
         }
-        .option-btn:disabled { cursor: not-allowed; opacity: 0.85; }
+        .option-btn:disabled { cursor: default; opacity: 0.9; }
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
         }
         .score-display { 
-            font-size: 1.1em; 
+            font-size: 1em; 
             color: var(--brown); 
-            margin: 5px 0; 
+            margin: 4px 0; 
             font-weight: bold;
         }
         .verse-display {
             background: #fff;
             border: 2px solid var(--gold);
-            border-radius: 12px;
-            padding: 12px;
-            margin: 8px 0;
+            border-radius: 10px;
+            padding: 10px;
+            margin: 6px 0;
             font-style: italic;
             color: #333;
-            font-size: 0.95em;
-            line-height: 1.5;
+            font-size: 0.9em;
+            line-height: 1.4;
         }
         .verse-missing { color: var(--red); font-weight: bold; text-decoration: underline; }
         .leaderboard {
             background: #fff;
             border: 2px solid var(--gold);
-            border-radius: 12px;
-            padding: 10px;
-            margin: 15px 0;
-            max-height: 200px;
+            border-radius: 10px;
+            padding: 8px;
+            margin: 10px 0;
+            max-height: 180px;
             overflow-y: auto;
         }
         .leaderboard table { width: 100%; border-collapse: collapse; }
-        .leaderboard th { background: var(--gold); color: #1a1a2e; padding: 6px; font-size: 0.85em; }
-        .leaderboard td { padding: 6px; font-size: 0.8em; border-bottom: 1px solid #ddd; color: #333; }
+        .leaderboard th { background: var(--gold); color: #1a1a2e; padding: 5px; font-size: 0.8em; }
+        .leaderboard td { padding: 5px; font-size: 0.78em; border-bottom: 1px solid #ddd; color: #333; }
         .status-badge {
             background: #e0c060;
             color: #5a3d2b;
-            padding: 4px 8px;
+            padding: 3px 8px;
             border-radius: 6px;
-            font-size: 0.85em;
-            margin-bottom: 8px;
+            font-size: 0.8em;
+            margin-bottom: 6px;
             display: inline-block;
             font-weight: bold;
         }
@@ -327,20 +329,14 @@
                 try {
                     const { data, error } = await supabaseClient
                         .from('puntuaciones')
-                        .insert([
-                            { nombre: name, edad: age, puntos: score, medalla: medal }
-                        ]);
+                        .insert([{ nombre: name, edad: age, puntos: score, medalla: medal }]);
 
                     if (error) {
-                        if (error.code === '23505') {
-                            return { isFirstTime: false };
-                        }
-                        console.error("Error al guardar en Supabase:", error.message);
+                        if (error.code === '23505') return { isFirstTime: false };
                         return { error: true };
                     }
                     return { isFirstTime: true };
                 } catch (err) {
-                    console.error("Error de conexión:", err);
                     return { error: true };
                 }
             }
@@ -353,20 +349,16 @@
                         .order('puntos', { ascending: false })
                         .limit(10);
 
-                    if (error) {
-                        console.error("Error al obtener clasificación:", error.message);
-                        return [];
-                    }
+                    if (error) return [];
                     return data;
                 } catch (err) {
-                    console.error("Error de red:", err);
                     return [];
                 }
             }
 
             async function checkPlayerExists(name, age) {
                 try {
-                    const { data, error } = await supabaseClient
+                    const { data } = await supabaseClient
                         .from('puntuaciones')
                         .select('nombre')
                         .eq('nombre', name)
@@ -383,9 +375,7 @@
             let audioCtx = null;
             function initAudio() {
                 if (!audioCtx) {
-                    try {
-                        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                    } catch(e) {}
+                    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
                 }
                 if (audioCtx && audioCtx.state === 'suspended') {
                     audioCtx.resume().catch(() => {});
@@ -428,7 +418,7 @@
                             oscW.frequency.value = 180; oscW.type = 'sawtooth';
                             gainW.gain.setValueAtTime(0.1, now);
                             gainW.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-                            oscW.start(now + 0); oscW.stop(now + 0.35);
+                            oscW.start(now); oscW.stop(now + 0.35);
                             break;
                         case 'tick':
                             const oscK = audioCtx.createOscillator();
@@ -515,11 +505,9 @@
             let titleAlpha = 0;
             let sparkParticles = [];
             let canClick = true;
-
-            // Variables para animaciones finales
             let celebrationAnimTime = 0;
 
-            // ================== DIBUJO ==================
+            // ================== DIBUJO Y EFECTOS ==================
             function createSpark() {
                 return {
                     x: W / 2 + (Math.random() - 0.5) * 20,
@@ -596,14 +584,12 @@
             function drawAnimatedMedal(type, cx, cy) {
                 const pulse = Math.sin(celebrationAnimTime * 3) * 4;
                 const radius = 45 + pulse * 0.5;
-                let color1 = '#CD7F32', color2 = '#8B5A2B', label = 'BRONCE';
+                let color1 = '#CD7F32', color2 = '#8B5A2B';
 
-                if (type === 'silver') { color1 = '#FFFFFF'; color2 = '#78909C'; label = 'PLATA'; }
-                else if (type === 'gold') { color1 = '#FFF59D'; color2 = '#FBC02D'; label = 'ORO'; }
+                if (type === 'silver') { color1 = '#FFFFFF'; color2 = '#78909C'; }
+                else if (type === 'gold') { color1 = '#FFF59D'; color2 = '#FBC02D'; }
 
                 ctx.save();
-                
-                // Cintas de la medalla
                 ctx.fillStyle = '#D32F2F';
                 ctx.beginPath();
                 ctx.moveTo(cx - 20, cy - radius); ctx.lineTo(cx - 35, cy - radius - 40);
@@ -616,14 +602,10 @@
                 ctx.lineTo(cx + 15, cy - radius - 40); ctx.lineTo(cx, cy - radius);
                 ctx.fill();
 
-                // Resplandor
                 const glow = ctx.createRadialGradient(cx, cy, 5, cx, cy, radius + 20);
-                glow.addColorStop(0, color1);
-                glow.addColorStop(1, 'rgba(0,0,0,0)');
-                ctx.fillStyle = glow;
-                ctx.beginPath(); ctx.arc(cx, cy, radius + 20, 0, Math.PI * 2); ctx.fill();
+                glow.addColorStop(0, color1); glow.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(cx, cy, radius + 20, 0, Math.PI * 2); ctx.fill();
 
-                // Cuerpo medalla
                 const medalGradient = ctx.createRadialGradient(cx - 15, cy - 15, 5, cx, cy, radius);
                 medalGradient.addColorStop(0, color1); medalGradient.addColorStop(0.7, color2); medalGradient.addColorStop(1, '#3a2a0a');
                 ctx.fillStyle = medalGradient; ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.fill();
@@ -632,7 +614,6 @@
                 ctx.fillStyle = '#FFF'; ctx.font = 'bold 30px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
                 ctx.fillText('★', cx, cy - 2);
 
-                // Destellos alrededor de la medalla
                 for (let i = 0; i < 4; i++) {
                     const angle = celebrationAnimTime * 2 + (i * Math.PI / 2);
                     const sx = cx + Math.cos(angle) * (radius + 12);
@@ -640,12 +621,10 @@
                     ctx.fillStyle = '#FFF';
                     ctx.beginPath(); ctx.arc(sx, sy, 3, 0, Math.PI * 2); ctx.fill();
                 }
-
                 ctx.restore();
             }
 
             function drawJumpingPerson(cx, baseY) {
-                // Cálculo de posición en salto
                 const jumpY = Math.abs(Math.sin(celebrationAnimTime * 6)) * 35;
                 const py = baseY - jumpY;
 
@@ -654,58 +633,26 @@
                 ctx.strokeStyle = '#F5E6C8';
                 ctx.fillStyle = '#F5E6C8';
 
-                // Sombra en el suelo
                 const shadowScale = Math.max(0.3, 1 - (jumpY / 50));
                 ctx.fillStyle = 'rgba(0,0,0,0.4)';
-                ctx.beginPath();
-                ctx.ellipse(cx, baseY + 5, 25 * shadowScale, 6 * shadowScale, 0, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.beginPath(); ctx.ellipse(cx, baseY + 5, 25 * shadowScale, 6 * shadowScale, 0, 0, Math.PI * 2); ctx.fill();
 
                 ctx.fillStyle = '#F5E6C8';
-                // Cabeza
-                ctx.beginPath();
-                ctx.arc(cx, py - 55, 12, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.beginPath(); ctx.arc(cx, py - 55, 12, 0, Math.PI * 2); ctx.fill();
 
-                // Sonrisa de victoria
                 ctx.strokeStyle = '#5A3D2B'; ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.arc(cx, py - 54, 6, 0.1 * Math.PI, 0.9 * Math.PI);
-                ctx.stroke();
+                ctx.beginPath(); ctx.arc(cx, py - 54, 6, 0.1 * Math.PI, 0.9 * Math.PI); ctx.stroke();
 
-                // Cuerpo (Túnica Bíblica)
                 ctx.fillStyle = '#C9A84C';
                 ctx.beginPath();
-                ctx.moveTo(cx - 15, py - 40);
-                ctx.lineTo(cx + 15, py - 40);
-                ctx.lineTo(cx + 22, py - 5);
-                ctx.lineTo(cx - 22, py - 5);
-                ctx.closePath();
-                ctx.fill();
+                ctx.moveTo(cx - 15, py - 40); ctx.lineTo(cx + 15, py - 40);
+                ctx.lineTo(cx + 22, py - 5); ctx.lineTo(cx - 22, py - 5);
+                ctx.closePath(); ctx.fill();
 
-                // Brazos alzados celebrando
                 ctx.strokeStyle = '#F5E6C8'; ctx.lineWidth = 4; ctx.lineCap = 'round';
-                // Brazo izquierdo
-                ctx.beginPath();
-                ctx.moveTo(cx - 12, py - 35);
-                ctx.lineTo(cx - 28, py - 55);
-                ctx.lineTo(cx - 35, py - 70);
-                ctx.stroke();
-
-                // Brazo derecho
-                ctx.beginPath();
-                ctx.moveTo(cx + 12, py - 35);
-                ctx.lineTo(cx + 28, py - 55);
-                ctx.lineTo(cx + 35, py - 70);
-                ctx.stroke();
-
-                // Piernas en salto
-                ctx.beginPath();
-                ctx.moveTo(cx - 10, py - 5);
-                ctx.lineTo(cx - 16, py + 12);
-                ctx.moveTo(cx + 10, py - 5);
-                ctx.lineTo(cx + 16, py + 12);
-                ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx - 12, py - 35); ctx.lineTo(cx - 28, py - 55); ctx.lineTo(cx - 35, py - 70); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx + 12, py - 35); ctx.lineTo(cx + 28, py - 55); ctx.lineTo(cx + 35, py - 70); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx - 10, py - 5); ctx.lineTo(cx - 16, py + 12); ctx.moveTo(cx + 10, py - 5); ctx.lineTo(cx + 16, py + 12); ctx.stroke();
 
                 ctx.restore();
             }
@@ -756,14 +703,10 @@
                         quote = "¡Sigue adelante! 'La exposición de tus palabras alumbra' (Salmo 119:130).";
                     }
 
-                    // Fondo con destellos suaves de fondo
                     updateSparks(); drawSparks();
-
-                    // Dibujar personaje saltando a la izquierda y Medalla animada a la derecha
                     drawJumpingPerson(W * 0.30, H * 0.58);
                     drawAnimatedMedal(medalType, W * 0.70, H * 0.45);
 
-                    // Títulos y puntuación
                     ctx.fillStyle = '#FFD700'; ctx.font = 'bold 36px Georgia'; ctx.textAlign = 'center';
                     ctx.fillText('¡FELICIDADES!', W / 2, H * 0.12);
                     
@@ -773,12 +716,9 @@
                     ctx.fillStyle = '#E0C060'; ctx.font = 'bold 28px Georgia'; 
                     ctx.fillText(`${totalScore} / 75 PUNTOS`, W / 2, H * 0.27);
 
-                    // Mensaje motivador según la medalla
                     ctx.save();
-                    ctx.fillStyle = '#FFF8DC'; 
-                    ctx.font = 'italic 16px Georgia';
-                    ctx.shadowColor = 'rgba(255, 215, 0, 0.4)';
-                    ctx.shadowBlur = 10;
+                    ctx.fillStyle = '#FFF8DC'; ctx.font = 'italic 16px Georgia';
+                    ctx.shadowColor = 'rgba(255, 215, 0, 0.4)'; ctx.shadowBlur = 10;
                     ctx.fillText(quote, W / 2, H * 0.72);
                     ctx.restore();
 
@@ -797,7 +737,7 @@
                 animationId = requestAnimationFrame(render);
             }
 
-            // ================== DIÁLOGOS Y VENTANAS CON TRANSICIONES SUAVES ==================
+            // ================== DIÁLOGOS Y VENTANAS ==================
             function showDialog(htmlContent) {
                 dialogOverlay.classList.remove('closing');
                 dialogBox.innerHTML = htmlContent;
@@ -812,7 +752,7 @@
                     dialogOverlay.classList.remove('closing');
                     dialogBox.innerHTML = '';
                     if (callback) callback();
-                }, 400);
+                }, 350);
             }
 
             function showStageIntro(title, description, onStartCallback) {
@@ -830,7 +770,7 @@
             function showRegistrationDialog() {
                 showDialog(`
                     <h2>🕯️ LÁMPARA</h2>
-                    <p style="color:#5a3d2b; margin-bottom:12px; font-size:1.1em;">Ingresa tus datos para empezar:</p>
+                    <p style="color:#5a3d2b; margin-bottom:10px; font-size:1em;">Ingresa tus datos para empezar:</p>
                     <input type="text" id="nameInput" placeholder="Tu nombre" maxlength="20" autocomplete="off">
                     <input type="number" id="ageInput" placeholder="Tu edad" min="5" max="120" autocomplete="off">
                     <br>
@@ -850,7 +790,6 @@
                         playerName = name; 
                         playerAge = age;
 
-                        // Seleccionar preguntas aleatorias para la partida
                         activeEtapa1Questions = getRandomQuestions(poolEtapa1, 5);
                         activeEtapa2Questions = getRandomQuestions(poolEtapa2, 5);
                         activeEtapa3Questions = getRandomQuestions(poolEtapa3, 5);
@@ -912,7 +851,7 @@
 
             function prepareEtapa2() {
                 showStageIntro(
-                    "ETAPA 2: CONOCIMIENTO DE CAPITULO",
+                    "ETAPA 2: ESGRIMA BÍBLICO",
                     "Pon a prueba tu agilidad mental identificando exactamente en qué capítulo de Génesis ocurren los sucesos narrados.",
                     startEtapa2
                 );
@@ -979,13 +918,13 @@
 
                 let questionHTML = currentEtapa === 6
                     ? `<div class="verse-display">"${q.verse.replace('______', '<span class="verse-missing">______</span>')}"</div>`
-                    : `<p style="color:#333; font-size:1.05em; margin:8px 0; font-weight:bold; line-height:1.3;">${q.question}</p>`;
+                    : `<p style="color:#333; font-size:1em; margin:6px 0; font-weight:bold; line-height:1.3;">${q.question}</p>`;
 
                 showDialog(`
                     <h2 style="color:#5a3d2b;">${etapaTitle}</h2>
                     ${isPracticeMode ? '<div class="status-badge">🎮 Modo Práctica</div>' : ''}
                     <div class="timer-container">
-                        <span style="color:#8B6914; font-size:0.85em;">Pregunta ${currentQuestionIndex + 1} de ${questions.length}</span>
+                        <span style="color:#8B6914; font-size:0.8em;">Pregunta ${currentQuestionIndex + 1} de ${questions.length}</span>
                         <div class="timer-badge" id="timerBadge">⏱️ ${QUESTION_TIME_LIMIT}s</div>
                     </div>
                     <div class="timer-bar"><div class="timer-fill" id="timerFill"></div></div>
@@ -1040,10 +979,10 @@
                                 } else if (currentEtapa === 6) {
                                     showFinalScreen();
                                 }
-                            }, 400);
+                            }, 350);
                         }
                     });
-                }, 1800);
+                }, 1600);
             }
 
             async function showFinalScreen() {
@@ -1055,7 +994,7 @@
                 playSound('win');
             }
 
-            // ================== EVENTOS ==================
+            // ================== EVENTOS Y RESPONSIVIDAD ==================
             function handleInteraction() {
                 initAudio();
                 if (!canClick) return;

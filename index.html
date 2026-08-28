@@ -2,300 +2,270 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>LÁMPARA - Juego Bíblico</title>
-    <!-- Cliente de Supabase -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lámpara - Juego Bíblico</title>
+    
+    <!-- Carga de la librería oficial de Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
-        * { 
-            margin: 0; 
-            padding: 0; 
-            box-sizing: border-box; 
-            touch-action: none;
+        :root {
+            --gold: #FFD700;
+            --dark-gold: #8B6914;
+            --wood: #5a3d2b;
+            --light-bg: #fff8dc;
+            --green: #4CAF50;
+            --red: #f44336;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
             user-select: none;
             -webkit-user-select: none;
-            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
-        :root {
-            --gold: #c9a84c;
-            --gold-light: #e0c060;
-            --gold-dark: #8B6914;
-            --brown: #5a3d2b;
-            --cream: #f5e6c8;
-            --dark: #1a1a2e;
-            --red: #f44336;
-            --green: #4CAF50;
-        }
-        html, body {
-            width: 100vw;
-            height: 100dvh;
-            position: fixed;
-            top: 0;
-            left: 0;
+
+        body, html {
+            width: 100%;
+            height: 100%;
             overflow: hidden;
-            background: #000;
-            font-family: 'Georgia', 'Times New Roman', serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            background-color: #000;
+            font-family: Georgia, serif;
         }
+
         #gameContainer {
             position: relative;
             width: 100vw;
-            height: 100dvh;
-            background: #000;
-            overflow: hidden;
+            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
         }
+
         canvas {
+            display: block;
             width: 100%;
             height: 100%;
-            display: block;
-            background: #000;
-            cursor: pointer;
         }
-        #developerCredit {
+
+        /* Modales / Diálogos emergentes */
+        .dialog-overlay {
             position: absolute;
-            bottom: max(10px, env(safe-area-inset-bottom));
-            right: 15px;
-            color: rgba(255, 255, 255, 0.45);
-            font-size: 11px;
-            font-family: 'Georgia', serif;
-            z-index: 5;
-            pointer-events: none;
-            letter-spacing: 0.5px;
-        }
-        #dialogOverlay {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100vw; height: 100dvh;
-            background: rgba(0,0,0,0.85);
-            display: none;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 10;
             opacity: 0;
+            pointer-events: none;
             transition: opacity 0.3s ease;
-            backdrop-filter: blur(4px);
-            padding: 20px;
-            touch-action: auto;
+            z-index: 10;
         }
-        #dialogOverlay.active {
-            display: flex;
+
+        .dialog-overlay.active {
             opacity: 1;
+            pointer-events: auto;
         }
+
         .dialog-box {
-            background: linear-gradient(180deg, #f5e6c8 0%, #e8d5a3 100%);
-            border: 3px solid var(--gold);
-            border-radius: 16px;
+            background: var(--light-bg);
+            border: 4px solid var(--dark-gold);
+            border-radius: 12px;
             padding: 20px;
-            width: 90vw;
-            max-width: 400px;
+            width: 90%;
+            max-width: 420px;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
             text-align: center;
-            box-shadow: 0 0 35px rgba(201,168,76,0.5);
-            transform: translateY(10px) scale(0.96);
-            opacity: 0;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
-            max-height: 85dvh;
+            max-height: 90vh;
             overflow-y: auto;
-            touch-action: pan-y;
         }
-        #dialogOverlay.active .dialog-box {
-            transform: translateY(0) scale(1);
-            opacity: 1;
-        }
-        #dialogOverlay.closing .dialog-box {
-            transform: translateY(-10px) scale(0.96);
-            opacity: 0;
-        }
-        .dialog-box h2 { 
-            color: var(--brown); 
-            font-size: 1.4em; 
+
+        .dialog-box h2 {
+            color: var(--wood);
+            font-size: 1.4em;
             margin-bottom: 10px;
         }
+
         .dialog-box p.description {
-            color: #4a3324;
-            font-size: 0.9em;
-            line-height: 1.4;
-            margin: 10px 0 14px 0;
-            background: rgba(255,255,255,0.55);
-            padding: 10px;
-            border-radius: 8px;
-            border-left: 4px solid var(--gold);
-        }
-        .dialog-box input {
-            width: 100%;
-            padding: 12px;
-            margin: 6px 0;
-            font-size: 1em;
-            border: 2px solid var(--gold);
-            border-radius: 8px;
-            background: #fff;
             color: #333;
-            font-family: 'Georgia', serif;
-            outline: none;
-            text-align: center;
-            touch-action: auto;
-        }
-        .dialog-box button {
-            background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold) 50%, var(--gold-dark) 100%);
-            color: #1a1a2e;
-            border: 2px solid var(--gold-dark);
-            padding: 12px 16px;
             font-size: 0.95em;
+            line-height: 1.4;
+            margin-bottom: 15px;
+        }
+
+        input[type="text"], input[type="number"] {
+            width: 90%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 2px solid var(--dark-gold);
+            border-radius: 6px;
+            font-size: 1em;
+            text-align: center;
+            outline: none;
+        }
+
+        button {
+            background: linear-gradient(180deg, #C9A84C 0%, #8B6914 100%);
+            color: white;
+            border: 2px solid var(--wood);
+            padding: 12px 20px;
+            font-size: 1em;
+            font-weight: bold;
             border-radius: 8px;
             cursor: pointer;
-            font-weight: bold;
-            margin-top: 8px;
-            transition: all 0.2s;
-            font-family: 'Georgia', serif;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+            margin-top: 10px;
             width: 100%;
-            touch-action: auto;
+            transition: transform 0.1s, background 0.2s;
         }
-        .dialog-box button:active { 
-            transform: scale(0.98);
+
+        button:active {
+            transform: scale(0.97);
         }
-        .timer-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin: 6px 0;
-            font-weight: bold;
-            color: var(--brown);
-        }
-        .timer-badge {
-            background: var(--brown);
-            color: var(--gold-light);
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 0.85em;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .timer-badge.urgent {
-            background: var(--red);
-            color: #fff;
-            animation: pulse 0.5s infinite alternate;
-        }
-        @keyframes pulse {
-            from { transform: scale(1); }
-            to { transform: scale(1.05); }
-        }
-        .timer-bar {
-            width: 100%;
-            height: 5px;
-            background: #d4c4a0;
-            border-radius: 3px;
-            overflow: hidden;
-            margin-bottom: 8px;
-        }
-        .timer-fill {
-            height: 100%;
-            background: var(--green);
-            width: 100%;
-            transition: width 1s linear, background-color 0.3s;
-        }
-        .progress-bar {
-            width: 100%;
-            height: 5px;
-            background: #d4c4a0;
-            border-radius: 3px;
-            margin: 6px 0;
-            overflow: hidden;
-        }
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--gold-dark) 0%, var(--gold) 50%, var(--gold-light) 100%);
-            transition: width 0.4s ease;
-        }
+
+        /* Opciones de respuesta */
         .options-container {
             display: flex;
             flex-direction: column;
             gap: 8px;
-            margin-top: 10px;
+            margin-top: 12px;
         }
+
         .option-btn {
-            background: #fff;
-            border: 2px solid var(--gold);
-            border-radius: 8px;
+            background: #ffffff;
+            color: #333;
+            border: 2px solid var(--dark-gold);
             padding: 10px 12px;
             font-size: 0.9em;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-family: 'Georgia', serif;
-            color: #333;
             text-align: left;
-            touch-action: auto;
+            border-radius: 6px;
+            margin-top: 0;
+            line-height: 1.2;
+            word-break: break-word;
         }
-        .option-btn.correct { 
-            background: linear-gradient(180deg, #66BB6A 0%, var(--green) 100%); 
-            color: #fff; 
-            border-color: #2E7D32; 
+
+        .option-btn.correct {
+            background-color: #d4edda !important;
+            border-color: var(--green) !important;
+            color: #155724 !important;
         }
-        .option-btn.incorrect { 
-            background: linear-gradient(180deg, #EF5350 0%, var(--red) 100%); 
-            color: #fff; 
-            border-color: #c62828; 
-            animation: shake 0.4s;
+
+        .option-btn.incorrect {
+            background-color: #f8d7da !important;
+            border-color: var(--red) !important;
+            color: #721c24 !important;
         }
-        .option-btn:disabled { cursor: default; opacity: 0.9; }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-4px); }
-            75% { transform: translateX(4px); }
+
+        /* Indicadores y Barras de Tiempo/Progreso */
+        .timer-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
         }
-        .score-display { 
-            font-size: 0.95em; 
-            color: var(--brown); 
-            margin: 4px 0; 
+
+        .timer-badge {
             font-weight: bold;
+            color: var(--wood);
+            font-size: 0.85em;
         }
+
+        .timer-badge.urgent {
+            color: var(--red);
+            animation: pulse 0.5s infinite alternate;
+        }
+
+        .timer-bar, .progress-bar {
+            width: 100%;
+            height: 6px;
+            background-color: #ddd;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .timer-fill {
+            height: 100%;
+            width: 100%;
+            background-color: var(--dark-gold);
+            transition: width 1s linear, background-color 0.3s;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--green);
+            transition: width 0.3s;
+        }
+
+        .score-display {
+            font-size: 0.85em;
+            color: var(--dark-gold);
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .status-badge {
+            background-color: var(--dark-gold);
+            color: white;
+            font-size: 0.75em;
+            padding: 2px 8px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+
         .verse-display {
-            background: #fff;
-            border: 2px solid var(--gold);
-            border-radius: 8px;
-            padding: 10px;
-            margin: 6px 0;
             font-style: italic;
-            color: #333;
-            font-size: 0.9em;
+            color: #2c1d11;
+            font-size: 0.95em;
             line-height: 1.4;
+            margin: 10px 0;
         }
-        .verse-missing { color: var(--red); font-weight: bold; text-decoration: underline; }
+
+        .verse-missing {
+            color: var(--red);
+            font-weight: bold;
+            text-decoration: underline;
+        }
+
+        /* Tabla de Clasificación */
         .leaderboard {
-            background: #fff;
-            border: 2px solid var(--gold);
-            border-radius: 8px;
-            padding: 6px;
+            width: 100%;
             margin: 10px 0;
             max-height: 200px;
             overflow-y: auto;
-            touch-action: pan-y;
         }
-        .leaderboard table { width: 100%; border-collapse: collapse; }
-        .leaderboard th { background: var(--gold); color: #1a1a2e; padding: 6px; font-size: 0.8em; }
-        .leaderboard td { padding: 6px; font-size: 0.8em; border-bottom: 1px solid #ddd; color: #333; }
-        .status-badge {
-            background: #e0c060;
-            color: #5a3d2b;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 0.8em;
-            margin-bottom: 6px;
-            display: inline-block;
-            font-weight: bold;
+
+        .leaderboard table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+        }
+
+        .leaderboard th, .leaderboard td {
+            padding: 6px 4px;
+            border-bottom: 1px solid #ccc;
+            text-align: center;
+        }
+
+        .leaderboard th {
+            background-color: var(--dark-gold);
+            color: white;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.05); }
         }
     </style>
 </head>
 <body>
+
     <div id="gameContainer">
         <canvas id="gameCanvas"></canvas>
-        <div id="developerCredit">Desarrollado por Nelson_F</div>
-        <div id="dialogOverlay">
+        
+        <div class="dialog-overlay" id="dialogOverlay">
             <div class="dialog-box" id="dialogBox"></div>
         </div>
     </div>
@@ -306,12 +276,24 @@
             const ctx = canvas.getContext('2d');
             let W = 400, H = 600;
 
+            // Ajuste para evitar texto y gráficos borrosos en pantallas móviles (Retina / High-DPI)
             function resizeCanvas() {
                 const container = document.getElementById('gameContainer');
+                const dpr = window.devicePixelRatio || 1;
+                
                 W = container.clientWidth;
                 H = container.clientHeight;
-                canvas.width = W;
-                canvas.height = H;
+
+                // Ajustar el tamaño real del buffer interno escalado por el DPR
+                canvas.width = Math.floor(W * dpr);
+                canvas.height = Math.floor(H * dpr);
+
+                // Forzar el tamaño en CSS al tamaño lógico
+                canvas.style.width = W + 'px';
+                canvas.style.height = H + 'px';
+
+                // Normalizar el contexto para usar coordenadas lógicas simples
+                ctx.scale(dpr, dpr);
             }
             resizeCanvas();
             window.addEventListener('resize', resizeCanvas);
@@ -462,7 +444,7 @@
                 { question: "¿Cuál era el nombre del primer hijo que tuvo Abraham con Agar la egipcia?", options: ["Ismael", "Isaac", "Esaú", "Jacob"], correct: 0 },
                 { question: "¿Qué hijo le dio a luz Sara a Abraham en su vejez?", options: ["Ismael", "Isaac", "Jacob", "Esaú"], correct: 1 },
                 { question: "¿Por cuántas piezas de plata vendieron sus hermanos a José a los ismaelitas?", options: ["Treinta piezas de plata", "Veinte piezas de plata", "Cincuenta piezas de plata", "Diez piezas de plata"], correct: 1 },
-                { question: "¿Cuántos años vivió Matusalén en total?", options: ["Novecientos sesenta y nueve años", "Novecientos cincuenta años", "Ochocientos noventa y cinco años", "Novecientos treinta años"], correct: 0 }
+                { question: "¿Cuántos años vivió Matusalén en total?", options: ["Novecientos sesenta y nueve años", "Novecientos cincuanto años", "Ochocientos noventa y cinco años", "Novecientos treinta años"], correct: 0 }
             ];
 
             const poolEtapa2 = [
@@ -681,13 +663,22 @@
                         ctx.save();
                         ctx.globalAlpha = Math.min(1, titleAlpha);
                         const titleSize = Math.min(W * 0.12, 48);
-                        ctx.fillStyle = '#FFD700'; ctx.font = `bold ${titleSize}px Georgia`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                        ctx.shadowColor = '#FF8C00'; ctx.shadowBlur = 20;
+                        
+                        ctx.shadowColor = '#FF8C00';
+                        ctx.shadowBlur = 10;
+                        ctx.fillStyle = '#FFD700'; 
+                        ctx.font = `bold ${titleSize}px Georgia, serif`; 
+                        ctx.textAlign = 'center'; 
+                        ctx.textBaseline = 'middle';
                         ctx.fillText('LÁMPARA', W / 2, H * 0.18);
+                        
                         ctx.shadowBlur = 0;
-                        ctx.fillStyle = '#FFF8DC'; ctx.font = '16px Georgia';
+                        ctx.fillStyle = '#FFF8DC'; 
+                        ctx.font = '15px Georgia, serif';
                         ctx.fillText('Juego Bíblico - Génesis (RVR1960)', W / 2, H * 0.27);
-                        ctx.fillStyle = 'rgba(255, 200, 100, 0.6)'; ctx.font = 'italic 12px Georgia';
+                        
+                        ctx.fillStyle = 'rgba(255, 200, 100, 0.7)'; 
+                        ctx.font = 'italic 12px Georgia, serif';
                         ctx.fillText('"Lámpara es a mis pies tu palabra..."', W / 2, H * 0.33);
                         ctx.restore();
                     }
@@ -695,7 +686,7 @@
                     if (flameIntensity >= 0.8) {
                         const blink = Math.sin(flameFlicker * 3) * 0.3 + 0.7;
                         ctx.save(); ctx.globalAlpha = blink;
-                        ctx.fillStyle = '#FFF'; ctx.font = '15px Georgia'; ctx.textAlign = 'center';
+                        ctx.fillStyle = '#FFF'; ctx.font = '14px Georgia, serif'; ctx.textAlign = 'center';
                         ctx.fillText('✦ Toca la pantalla para comenzar ✦', W / 2, H * 0.78);
                         ctx.restore();
                     }
@@ -715,29 +706,29 @@
                     drawJumpingPerson(W * 0.28, H * 0.55);
                     drawAnimatedMedal(medalType, W * 0.72, H * 0.45);
 
-                    ctx.fillStyle = '#FFD700'; ctx.font = 'bold 28px Georgia'; ctx.textAlign = 'center';
+                    ctx.fillStyle = '#FFD700'; ctx.font = 'bold 28px Georgia, serif'; ctx.textAlign = 'center';
                     ctx.fillText('¡FELICIDADES!', W / 2, H * 0.12);
                     
-                    ctx.fillStyle = '#FFF'; ctx.font = 'bold 20px Georgia'; 
+                    ctx.fillStyle = '#FFF'; ctx.font = 'bold 20px Georgia, serif'; 
                     ctx.fillText(`${playerName}`, W / 2, H * 0.18);
                     
-                    ctx.fillStyle = '#E0C060'; ctx.font = 'bold 22px Georgia'; 
+                    ctx.fillStyle = '#E0C060'; ctx.font = 'bold 22px Georgia, serif'; 
                     ctx.fillText(`${totalScore} / 75 PUNTOS`, W / 2, H * 0.25);
 
                     ctx.save();
-                    ctx.fillStyle = '#FFF8DC'; ctx.font = 'italic 13px Georgia';
+                    ctx.fillStyle = '#FFF8DC'; ctx.font = 'italic 13px Georgia, serif';
                     ctx.shadowColor = 'rgba(255, 215, 0, 0.4)'; ctx.shadowBlur = 10;
                     ctx.fillText(quote, W / 2, H * 0.70);
                     ctx.restore();
 
                     if (isPracticeMode) {
-                        ctx.fillStyle = '#A0822A'; ctx.font = '12px Georgia';
+                        ctx.fillStyle = '#A0822A'; ctx.font = '12px Georgia, serif';
                         ctx.fillText('(Modo Práctica - Tu primer puntaje no ha cambiado)', W / 2, H * 0.76);
                     }
 
                     const blink = Math.sin(flameFlicker * 2) * 0.3 + 0.7;
                     ctx.save(); ctx.globalAlpha = blink;
-                    ctx.fillStyle = '#AAA'; ctx.font = '13px Georgia';
+                    ctx.fillStyle = '#AAA'; ctx.font = '13px Georgia, serif';
                     ctx.fillText('✦ Toca la pantalla para reiniciar ✦', W / 2, H * 0.88);
                     ctx.restore();
                 }

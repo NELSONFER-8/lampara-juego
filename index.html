@@ -1,1022 +1,347 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lámpara - Juego Bíblico</title>
-    
-    <!-- Carga de la librería oficial de Supabase JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <style>
-        :root {
-            --gold: #FFD700;
-            --dark-gold: #8B6914;
-            --wood: #5a3d2b;
-            --light-bg: #fff8dc;
-            --green: #4CAF50;
-            --red: #f44336;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: manipulation;
-        }
-
-        body, html {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #000;
-            font-family: Georgia, serif;
-        }
-
-        #gameContainer {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
-
-        /* Modales / Diálogos emergentes */
-        .dialog-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.75);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-            z-index: 10;
-        }
-
-        .dialog-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .dialog-box {
-            background: var(--light-bg);
-            border: 4px solid var(--dark-gold);
-            border-radius: 12px;
-            padding: 20px;
-            width: 90%;
-            max-width: 420px;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-            text-align: center;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .dialog-box h2 {
-            color: var(--wood);
-            font-size: 1.4em;
-            margin-bottom: 10px;
-        }
-
-        .dialog-box p.description {
-            color: #333;
-            font-size: 0.95em;
-            line-height: 1.4;
-            margin-bottom: 15px;
-        }
-
-        input[type="text"], input[type="number"] {
-            width: 90%;
-            padding: 10px;
-            margin: 8px 0;
-            border: 2px solid var(--dark-gold);
-            border-radius: 6px;
-            font-size: 1em;
-            text-align: center;
-            outline: none;
-        }
-
-        button {
-            background: linear-gradient(180deg, #C9A84C 0%, #8B6914 100%);
-            color: white;
-            border: 2px solid var(--wood);
-            padding: 12px 20px;
-            font-size: 1em;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-top: 10px;
-            width: 100%;
-            transition: transform 0.1s, background 0.2s;
-        }
-
-        button:active {
-            transform: scale(0.97);
-        }
-
-        /* Opciones de respuesta */
-        .options-container {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-top: 12px;
-        }
-
-        .option-btn {
-            background: #ffffff;
-            color: #333;
-            border: 2px solid var(--dark-gold);
-            padding: 10px 12px;
-            font-size: 0.9em;
-            text-align: left;
-            border-radius: 6px;
-            margin-top: 0;
-            line-height: 1.2;
-            word-break: break-word;
-        }
-
-        .option-btn.correct {
-            background-color: #d4edda !important;
-            border-color: var(--green) !important;
-            color: #155724 !important;
-        }
-
-        .option-btn.incorrect {
-            background-color: #f8d7da !important;
-            border-color: var(--red) !important;
-            color: #721c24 !important;
-        }
-
-        /* Indicadores y Barras de Tiempo/Progreso */
-        .timer-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 5px;
-        }
-
-        .timer-badge {
-            font-weight: bold;
-            color: var(--wood);
-            font-size: 0.85em;
-        }
-
-        .timer-badge.urgent {
-            color: var(--red);
-            animation: pulse 0.5s infinite alternate;
-        }
-
-        .timer-bar, .progress-bar {
-            width: 100%;
-            height: 6px;
-            background-color: #ddd;
-            border-radius: 3px;
-            overflow: hidden;
-            margin-bottom: 8px;
-        }
-
-        .timer-fill {
-            height: 100%;
-            width: 100%;
-            background-color: var(--dark-gold);
-            transition: width 1s linear, background-color 0.3s;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background-color: var(--green);
-            transition: width 0.3s;
-        }
-
-        .score-display {
-            font-size: 0.85em;
-            color: var(--dark-gold);
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
-
-        .status-badge {
-            background-color: var(--dark-gold);
-            color: white;
-            font-size: 0.75em;
-            padding: 2px 8px;
-            border-radius: 10px;
-            display: inline-block;
-            margin-bottom: 5px;
-        }
-
-        .verse-display {
-            font-style: italic;
-            color: #2c1d11;
-            font-size: 0.95em;
-            line-height: 1.4;
-            margin: 10px 0;
-        }
-
-        .verse-missing {
-            color: var(--red);
-            font-weight: bold;
-            text-decoration: underline;
-        }
-
-        /* Tabla de Clasificación */
-        .leaderboard {
-            width: 100%;
-            margin: 10px 0;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .leaderboard table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85em;
-        }
-
-        .leaderboard th, .leaderboard td {
-            padding: 6px 4px;
-            border-bottom: 1px solid #ccc;
-            text-align: center;
-        }
-
-        .leaderboard th {
-            background-color: var(--dark-gold);
-            color: white;
-        }
-
-        @keyframes pulse {
-            from { transform: scale(1); }
-            to { transform: scale(1.05); }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consulta de Llavero NFC</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #121212;
+      color: #e0e0e0;
+      margin: 0;
+      padding: 15px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .card {
+      background-color: #1e1e1e;
+      border-radius: 12px;
+      padding: 24px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    }
+    h2, h3 { text-align: center; color: #ffffff; margin-top: 0; }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 15px;
+    }
+    .badge-disponible { background-color: #27ae60; color: #fff; }
+    .badge-asignado { background-color: #2980b9; color: #fff; }
+    .field-group { margin-bottom: 15px; }
+    label { display: block; font-size: 13px; color: #aaa; margin-bottom: 5px; }
+    input[type="text"], input[type="tel"] {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      background-color: #2a2a2a;
+      color: #fff;
+      font-size: 15px;
+    }
+    input:disabled { opacity: 0.7; cursor: not-allowed; }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 15px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background 0.2s;
+    }
+    .btn-primary { background-color: #f39c12; color: #121212; }
+    .btn-secondary { background-color: #3498db; color: #fff; }
+    .btn-admin { background-color: #e74c3c; color: #fff; }
+    .admin-panel {
+      margin-top: 25px;
+      padding-top: 20px;
+      border-top: 1px solid #333;
+    }
+    /* Estilos del Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: #2a2a2a;
+      width: 90%;
+      max-width: 500px;
+      padding: 20px;
+      border-radius: 10px;
+      position: relative;
+    }
+    .close-btn {
+      position: absolute;
+      top: 10px; right: 15px;
+      background: #e74c3c; color: white;
+      border: none; padding: 5px 10px;
+      border-radius: 4px; cursor: pointer;
+    }
+    .viewer-container {
+      margin-top: 15px;
+      width: 100%;
+      min-height: 380px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #121212;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    #statusMsg { font-family: monospace; font-size: 13px; text-align: center; margin-top: 15px; }
+  </style>
 </head>
 <body>
 
-    <div id="gameContainer">
-        <canvas id="gameCanvas"></canvas>
+<div class="card">
+  <h2>Llavero NFC</h2>
+  
+  <div style="text-align: center;">
+    <span id="estadoBadge" class="badge badge-disponible">Cargando...</span>
+  </div>
+
+  <div class="field-group">
+    <label>Código Único:</label>
+    <input type="text" id="txtCodigo" disabled value="-------">
+  </div>
+
+  <div class="field-group">
+    <label>Propietario:</label>
+    <input type="text" id="txtPropietario" disabled placeholder="Sin asignar">
+  </div>
+
+  <div class="field-group">
+    <label>Teléfono de Contacto:</label>
+    <input type="tel" id="txtTelefono" disabled placeholder="Sin registrar">
+  </div>
+
+  <!-- Botón de consulta pública -->
+  <button id="btnVerTarjeta" class="btn btn-secondary" style="display: none;">Ver Tarjeta de Circulación</button>
+
+  <!-- Panel de Edición/Administración -->
+  <div class="admin-panel">
+    <h3>Gestión Administrativa</h3>
+    <button id="btnLogin" class="btn btn-admin">Iniciar Sesión con Google</button>
+
+    <form id="adminForm" style="display: none; margin-top: 15px;">
+      <div class="field-group">
+        <label for="editPropietario">Editar Propietario:</label>
+        <input type="text" id="editPropietario" required>
+      </div>
+      <div class="field-group">
+        <label for="editTelefono">Editar Teléfono:</label>
+        <input type="tel" id="editTelefono" required>
+      </div>
+      <div class="field-group">
+        <label for="fileInput">Subir/Cambiar Tarjeta (Imagen o PDF):</label>
+        <input type="file" id="fileInput" accept="image/*,application/pdf" style="margin-top: 5px;">
+      </div>
+      <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+    </form>
+  </div>
+
+  <p id="statusMsg"></p>
+</div>
+
+<!-- Modal para Visualización de Tarjeta de Circulación -->
+<div id="modalTarjeta" class="modal">
+  <div class="modal-content">
+    <button class="close-btn" id="btnCerrarModal">X Cerrar</button>
+    <h3>Tarjeta de Circulación</h3>
+    <div id="contenedorTarjeta" class="viewer-container"></div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+  // Configuración de tu proyecto en Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyC7L72sP3vg9_OooIZhcU8Ry0rgqFVz7tQ",
+    authDomain: "llaveros-nfc-5ebe2.firebaseapp.com",
+    projectId: "llaveros-nfc-5ebe2",
+    storageBucket: "llaveros-nfc-5ebe2.firebasestorage.app",
+    messagingSenderId: "752383020507",
+    appId: "1:752383020507:web:63015585ab4bfc5b3debfe"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+  const storage = getStorage(app);
+
+  let tarjetaUrlGlobal = null;
+  let tipoDocumentoGlobal = null;
+
+  // Extraer el ID desde los parámetros de la URL (ej: ?id=K9x2M8pL)
+  const urlParams = new URLSearchParams(window.location.search);
+  const llaveroId = urlParams.get('id') || "K9x2M8pL"; // 'K9x2M8pL' como ID fallback
+
+  const statusMsg = document.getElementById('statusMsg');
+
+  // 1. CARGAR DATOS DEL LLAVERO (Público)
+  async function cargarLlavero() {
+    try {
+      const docSnap = await getDoc(doc(db, "llaveros", llaveroId));
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        document.getElementById('txtCodigo').value = data.codigo || llaveroId;
+        document.getElementById('txtPropietario').value = data.propietario || "No asignado";
+        document.getElementById('txtTelefono').value = data.telefonoContacto || "No registrado";
         
-        <div class="dialog-overlay" id="dialogOverlay">
-            <div class="dialog-box" id="dialogBox"></div>
-        </div>
-    </div>
+        // Asignación de Badge
+        const estadoBadge = document.getElementById('estadoBadge');
+        estadoBadge.innerText = data.estado || "disponible";
+        estadoBadge.className = `badge badge-${data.estado === 'asignado' ? 'asignado' : 'disponible'}`;
+
+        // Datos para el visor de tarjeta
+        tarjetaUrlGlobal = data.tarjetaCirculacionUrl || null;
+        tipoDocumentoGlobal = data.tipoDocumento || null;
+
+        if (tarjetaUrlGlobal) {
+          document.getElementById('btnVerTarjeta').style.display = 'block';
+        }
+
+        // Rellenar formulario de administración
+        document.getElementById('editPropietario').value = data.propietario || "";
+        document.getElementById('editTelefono').value = data.telefonoContacto || "";
+      } else {
+        statusMsg.innerText = "❌ El llavero escaneado no existe.";
+      }
+    } catch (err) {
+      console.error(err);
+      statusMsg.innerText = "Error al leer datos: " + err.message;
+    }
+  }
+
+  // 2. VISUALIZADOR HÍBRIDO (Imagen o PDF)
+  function renderizarDocumento(url, tipoMime) {
+    const contenedor = document.getElementById('contenedorTarjeta');
+    if (!url) {
+      contenedor.innerHTML = '<p style="color:#888;">No hay tarjeta cargada.</p>';
+      return;
+    }
+
+    const urlLimpia = url.toLowerCase();
+    const esImagen = (tipoMime && tipoMime.startsWith('image/')) || 
+                     urlLimpia.includes('.png') || 
+                     urlLimpia.includes('.jpg') || 
+                     urlLimpia.includes('.jpeg') || 
+                     urlLimpia.includes('.webp');
+
+    if (esImagen) {
+      contenedor.innerHTML = `
+        <img src="${url}" alt="Tarjeta de Circulación" style="width: 100%; height: auto; max-height: 70vh; object-fit: contain;">
+      `;
+    } else {
+      // Motor embebido para renderizado directo en móviles sin forzar descarga
+      contenedor.innerHTML = `
+        <iframe src="https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true" 
+                style="width: 100%; height: 60vh; border: none;" allowfullscreen>
+        </iframe>
+      `;
+    }
+  }
+
+  // Eventos del Modal
+  document.getElementById('btnVerTarjeta').addEventListener('click', () => {
+    renderizarDocumento(tarjetaUrlGlobal, tipoDocumentoGlobal);
+    document.getElementById('modalTarjeta').style.display = 'flex';
+  });
+
+  document.getElementById('btnCerrarModal').addEventListener('click', () => {
+    document.getElementById('modalTarjeta').style.display = 'none';
+  });
+
+  // 3. AUTENTICACIÓN CON GOOGLE
+  document.getElementById('btnLogin').addEventListener('click', () => {
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(auth, provider).catch(err => {
+      statusMsg.innerText = "Error de autenticación: " + err.message;
+    });
+  });
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      document.getElementById('btnLogin').style.display = 'none';
+      document.getElementById('adminForm').style.display = 'block';
+      statusMsg.innerText = "Sesión activa: " + user.email;
+    } else {
+      document.getElementById('btnLogin').style.display = 'block';
+      document.getElementById('adminForm').style.display = 'none';
+    }
+  });
+
+  // 4. GUARDAR / EDITAR REGISTRO (Solo Autenticados)
+  document.getElementById('adminForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    statusMsg.innerText = "Guardando cambios...";
+
+    const propietario = document.getElementById('editPropietario').value;
+    const telefono = document.getElementById('editTelefono').value;
+    const fileInput = document.getElementById('fileInput');
+
+    try {
+      let finalUrl = tarjetaUrlGlobal;
+      let finalTipo = tipoDocumentoGlobal;
+
+      // Si subió un nuevo archivo, procesarlo en Firebase Storage
+      if (fileInput.files[0]) {
+        const file = fileInput.files[0];
+        const storageRef = ref(storage, `llaveros/${llaveroId}_tarjeta`);
+        
+        // Metadatos para forzar apertura inline
+        const metadata = {
+          contentType: file.type,
+          contentDisposition: 'inline'
+        };
+
+        await uploadBytes(storageRef, file, metadata);
+        finalUrl = await getDownloadURL(storageRef);
+        finalTipo = file.type;
+      }
+
+      // Actualizar datos en Firestore
+      await setDoc(doc(db, "llaveros", llaveroId), {
+        codigo: llaveroId,
+        propietario: propietario,
+        telefonoContacto: telefono,
+        estado: "asignado",
+        tarjetaCirculacionUrl: finalUrl,
+        tipoDocumento: finalTipo,
+        fechaActualizacion: new Date().toISOString()
+      }, { merge: true });
+
+      statusMsg.innerText = "✅ Guardado correctamente.";
+      cargarLlavero(); // Recargar datos
+    } catch (err) {
+      console.error(err);
+      statusMsg.innerText = "❌ Error al guardar: " + err.message;
+    }
+  });
+
+  // Inicializar lectura
+  cargarLlavero();
+</script>
 
-    <script>
-        window.addEventListener('DOMContentLoaded', () => {
-            const canvas = document.getElementById('gameCanvas');
-            const ctx = canvas.getContext('2d');
-            let W = 400, H = 600;
-
-            // Ajuste para evitar texto y gráficos borrosos en pantallas móviles (Retina / High-DPI)
-            function resizeCanvas() {
-                const container = document.getElementById('gameContainer');
-                const dpr = window.devicePixelRatio || 1;
-                
-                W = container.clientWidth;
-                H = container.clientHeight;
-
-                // Ajustar el tamaño real del buffer interno escalado por el DPR
-                canvas.width = Math.floor(W * dpr);
-                canvas.height = Math.floor(H * dpr);
-
-                // Forzar el tamaño en CSS al tamaño lógico
-                canvas.style.width = W + 'px';
-                canvas.style.height = H + 'px';
-
-                // Normalizar el contexto para usar coordenadas lógicas simples
-                ctx.scale(dpr, dpr);
-            }
-            resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
-
-            // ================== CONFIGURACIÓN SUPABASE ==================
-            const SUPABASE_URL = "https://ayzdvkitozqtvvlxphfl.supabase.co";
-            const SUPABASE_ANON_KEY = "sb_publishable_Z1JAN0l80o7sQFqRMVDNOw_poV3Ed3O";
-            const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-            const dialogOverlay = document.getElementById('dialogOverlay');
-            const dialogBox = document.getElementById('dialogBox');
-
-            let animationId = null;
-            let sparkSoundCounter = 0;
-
-            const QUESTION_TIME_LIMIT = 15;
-            let timeLeft = QUESTION_TIME_LIMIT;
-            let timerInterval = null;
-
-            // ================== BASE DE DATOS ==================
-            async function saveSupabaseScore(name, age, score, medal) {
-                try {
-                    const { data, error } = await supabaseClient
-                        .from('puntuaciones')
-                        .insert([{ nombre: name, edad: age, puntos: score, medalla: medal }]);
-
-                    if (error) {
-                        if (error.code === '23505') return { isFirstTime: false };
-                        return { error: true };
-                    }
-                    return { isFirstTime: true };
-                } catch (err) {
-                    return { error: true };
-                }
-            }
-
-            async function getTopScores() {
-                try {
-                    const { data, error } = await supabaseClient
-                        .from('puntuaciones')
-                        .select('nombre, edad, puntos, medalla')
-                        .order('puntos', { ascending: false })
-                        .limit(10);
-
-                    if (error) return [];
-                    return data;
-                } catch (err) {
-                    return [];
-                }
-            }
-
-            async function checkPlayerExists(name, age) {
-                try {
-                    const { data } = await supabaseClient
-                        .from('puntuaciones')
-                        .select('nombre')
-                        .eq('nombre', name)
-                        .eq('edad', age)
-                        .maybeSingle();
-
-                    return data !== null;
-                } catch(e) {
-                    return false;
-                }
-            }
-
-            // ================== AUDIO ==================
-            let audioCtx = null;
-            function initAudio() {
-                if (!audioCtx) {
-                    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
-                }
-                if (audioCtx && audioCtx.state === 'suspended') {
-                    audioCtx.resume().catch(() => {});
-                }
-            }
-            
-            function playSound(type) {
-                if (!audioCtx || audioCtx.state !== 'running') return;
-                try {
-                    const now = audioCtx.currentTime;
-                    switch(type) {
-                        case 'spark':
-                            if (sparkSoundCounter < 5) {
-                                const osc = audioCtx.createOscillator();
-                                const gain = audioCtx.createGain();
-                                osc.connect(gain); gain.connect(audioCtx.destination);
-                                osc.frequency.setValueAtTime(1200, now);
-                                osc.frequency.exponentialRampToValueAtTime(300, now + 0.15);
-                                gain.gain.setValueAtTime(0.1, now);
-                                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-                                osc.start(now); osc.stop(now + 0.15);
-                                sparkSoundCounter++;
-                            }
-                            break;
-                        case 'correct':
-                            [523, 659, 784].forEach((freq, i) => {
-                                const osc = audioCtx.createOscillator();
-                                const gain = audioCtx.createGain();
-                                osc.connect(gain); gain.connect(audioCtx.destination);
-                                osc.frequency.value = freq;
-                                gain.gain.setValueAtTime(0.12, now + i * 0.1);
-                                gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.3);
-                                osc.start(now + i * 0.1); osc.stop(now + i * 0.1 + 0.3);
-                            });
-                            break;
-                        case 'wrong':
-                            const oscW = audioCtx.createOscillator();
-                            const gainW = audioCtx.createGain();
-                            oscW.connect(gainW); gainW.connect(audioCtx.destination);
-                            oscW.frequency.value = 180; oscW.type = 'sawtooth';
-                            gainW.gain.setValueAtTime(0.1, now);
-                            gainW.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-                            oscW.start(now); oscW.stop(now + 0.35);
-                            break;
-                        case 'tick':
-                            const oscK = audioCtx.createOscillator();
-                            const gainK = audioCtx.createGain();
-                            oscK.connect(gainK); gainK.connect(audioCtx.destination);
-                            oscK.frequency.value = 800; oscK.type = 'square';
-                            gainK.gain.setValueAtTime(0.03, now);
-                            gainK.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-                            oscK.start(now); oscK.stop(now + 0.05);
-                            break;
-                        case 'win':
-                            [523, 659, 784, 1047].forEach((freq, i) => {
-                                const osc = audioCtx.createOscillator();
-                                const gain = audioCtx.createGain();
-                                osc.connect(gain); gain.connect(audioCtx.destination);
-                                osc.frequency.value = freq;
-                                gain.gain.setValueAtTime(0.12, now + i * 0.15);
-                                gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 0.4);
-                                osc.start(now + i * 0.15); osc.stop(now + i * 0.15 + 0.4);
-                            });
-                            break;
-                    }
-                } catch(e) {}
-            }
-
-            // ================== PREGUNTAS ==================
-            const poolEtapa1 = [
-                { question: "¿De qué árbol prohibió Dios comer al hombre en el huerto de Edén?", options: ["Del árbol de la vida", "Del árbol de la ciencia del bien y del mal", "Del árbol de la sabiduría", "Del árbol del conocimiento divino"], correct: 1 },
-                { question: "¿Qué puso Jehová sobre Caín para que no lo matase cualquiera que le hallara?", options: ["Una señal", "Una marca en la frente", "Una túnica de protección", "Un sello de fuego"], correct: 0 },
-                { question: "¿De qué clase de madera mandó Dios a Noé hacer el arca?", options: ["Madera de cedro", "Madera de gofer", "Madera de ciprés", "Madera de olivo"], correct: 1 },
-                { question: "¿Qué edad tenía Noé cuando el diluvio de las aguas vino sobre la tierra?", options: ["Seiscientos años", "Quinientos años", "Setecientos años", "Cuatrocientos cincuenta años"], correct: 0 },
-                { question: "¿Quién fue el padre de los que habitan en tiendas y crían ganados?", options: ["Jabal", "Jubal", "Tubal-caín", "Naama"], correct: 0 },
-                { question: "¿Cómo se llamaba la esposa de Abram (Abraham)?", options: ["Ketura", "Agar", "Sarai", "Rebeca"], correct: 2 },
-                { question: "¿Cuál era el nombre del primer hijo que tuvo Abraham con Agar la egipcia?", options: ["Ismael", "Isaac", "Esaú", "Jacob"], correct: 0 },
-                { question: "¿Qué hijo le dio a luz Sara a Abraham en su vejez?", options: ["Ismael", "Isaac", "Jacob", "Esaú"], correct: 1 },
-                { question: "¿Por cuántas piezas de plata vendieron sus hermanos a José a los ismaelitas?", options: ["Treinta piezas de plata", "Veinte piezas de plata", "Cincuenta piezas de plata", "Diez piezas de plata"], correct: 1 },
-                { question: "¿Cuántos años vivió Matusalén en total?", options: ["Novecientos sesenta y nueve años", "Novecientos cincuanto años", "Ochocientos noventa y cinco años", "Novecientos treinta años"], correct: 0 }
-            ];
-
-            const poolEtapa2 = [
-                { question: "¿En qué capítulo de Génesis se narra la desobediencia y caída del hombre?", options: ["Capítulo 2", "Capítulo 3", "Capítulo 4", "Capítulo 5"], correct: 1 },
-                { question: "¿En qué capítulo de Génesis se registra el libro de las generaciones de Adán hasta Noé?", options: ["Capítulo 4", "Capítulo 5", "Capítulo 6", "Capítulo 7"], correct: 1 },
-                { question: "¿En qué capítulo de Génesis establece Dios su pacto de la circuncisión y cambia el nombre de Abram a Abraham?", options: ["Capítulo 15", "Capítulo 16", "Capítulo 17", "Capítulo 18"], correct: 2 },
-                { question: "¿En qué capítulo de Génesis ocurre la destrucción de Sodoma y Gomorra?", options: ["Capítulo 17", "Capítulo 18", "Capítulo 19", "Capítulo 20"], correct: 2 },
-                { question: "¿En qué capítulo de Génesis se relata el sueño de José sobre las manojos/gavillas que se inclinaban?", options: ["Capítulo 35", "Capítulo 36", "Capítulo 37", "Capítulo 38"], correct: 2 },
-                { question: "¿En qué capítulo de Génesis se narra la creación de los cielos y la tierra en seis días?", options: ["Capítulo 1", "Capítulo 2", "Capítulo 3", "Capítulo 4"], correct: 0 },
-                { question: "¿En qué capítulo de Génesis se relata la torre de Babel y la confusión de las lenguas?", options: ["Capítulo 9", "Capítulo 10", "Capítulo 11", "Capítulo 12"], correct: 2 },
-                { question: "¿En qué capítulo de Génesis llama Dios a Abram a salir de su tierra y su parentela?", options: ["Capítulo 10", "Capítulo 11", "Capítulo 12", "Capítulo 13"], correct: 2 },
-                { question: "¿En qué capítulo de Génesis manda Dios a Abraham a ofrecer a Isaac en el monte Moriah?", options: ["Capítulo 20", "Capítulo 21", "Capítulo 22", "Capítulo 23"], correct: 2 },
-                { question: "¿En qué capítulo de Génesis lucha Jacob con un varón hasta el rayar del alba en Peniel?", options: ["Capítulo 30", "Capítulo 31", "Capítulo 32", "Capítulo 33"], correct: 2 }
-            ];
-
-            const poolEtapa3 = [
-                { verse: "Y creó Dios al hombre a su ______, a imagen de Dios lo creó; varón y hembra los creó. (Gn 1:27)", options: ["imagen", "semejanza", "voluntad", "gloria"], correct: 0 },
-                { verse: "Y se arrepintió Jehová de haber hecho hombre en la tierra, y le ______ en su corazón. (Gn 6:6)", options: ["dolió", "pesó", "entristeció", "lamentó"], correct: 0 },
-                { verse: "Y creyó a Jehová, y le fue contado por ______. (Gn 15:6)", options: ["justicia", "bendición", "salvación", "fe"], correct: 0 },
-                { verse: "Pero Jehová había dicho a Abram: Vete de tu tierra y de tu ______, y de la casa de tu padre... (Gn 12:1)", options: ["parentela", "familia", "herencia", "nación"], correct: 0 },
-                { verse: "Y llamó Abraham el nombre de aquel lugar, Jehová proveerá. Por tanto se dice hoy: En el ______ de Jehová será provisto. (Gn 22:14)", options: ["monte", "valle", "altar", "templo"], correct: 0 },
-                { verse: "En el principio creó Dios los cielos y la ______. (Gn 1:1)", options: ["tierra", "mar", "creación", "luz"], correct: 0 },
-                { verse: "Y dijo Dios: Sea la ______; y fue la ______. (Gn 1:3)", options: ["luz", "vida", "tierra", "expansión"], correct: 0 },
-                { verse: "Tomó, pues, Jehová Dios al hombre, y lo puso en el huerto de Edén, para que lo labrara y lo ______. (Gn 2:15)", options: ["guardase", "cuidase", "gobernase", "dominase"], correct: 0 },
-                { verse: "Y dijo Jehová Dios: No es bueno que el hombre esté solo; le haré ______ idónea para él. (Gn 2:18)", options: ["ayuda", "compañera", "pareja", "esposa"], correct: 0 },
-                { verse: "Vosotros pensasteis mal contra mí, mas Dios lo encaminó a ______, para hacer lo que vemos hoy... (Gn 50:20)", options: ["bien", "salvación", "paz", "justicia"], correct: 0 }
-            ];
-
-            let activeEtapa1Questions = [];
-            let activeEtapa2Questions = [];
-            let activeEtapa3Questions = [];
-
-            function getRandomQuestions(pool, count = 5) {
-                const shuffled = [...pool].sort(() => 0.5 - Math.random());
-                return shuffled.slice(0, count);
-            }
-
-            // ================== ESTADO DEL JUEGO ==================
-            let playerName = '';
-            let playerAge = '';
-            let isPracticeMode = false;
-            let totalScore = 0;
-            let currentQuestionIndex = 0;
-            let currentEtapa = 0;
-            let flameIntensity = 0;
-            let flameFlicker = 0;
-            let titleAlpha = 0;
-            let sparkParticles = [];
-            let canClick = true;
-            let celebrationAnimTime = 0;
-
-            // ================== DIBUJO Y RENDERIZADO ==================
-            function createSpark() {
-                return {
-                    x: W / 2 + (Math.random() - 0.5) * 20,
-                    y: H * 0.55 - 20,
-                    vx: (Math.random() - 0.5) * 2,
-                    vy: -Math.random() * 3 - 1,
-                    life: 1,
-                    decay: 0.02 + Math.random() * 0.03,
-                    size: 1 + Math.random() * 2
-                };
-            }
-
-            function updateSparks() {
-                sparkParticles = sparkParticles.filter(p => {
-                    p.x += p.vx; p.y += p.vy; p.vy += 0.05; p.life -= p.decay;
-                    return p.life > 0;
-                });
-                if (flameIntensity > 0.3 && sparkParticles.length < 15 && Math.random() < 0.05) {
-                    sparkParticles.push(createSpark());
-                }
-            }
-
-            function drawSparks() {
-                sparkParticles.forEach(p => {
-                    ctx.fillStyle = `rgba(255, 200, 50, ${Math.max(0, p.life)})`;
-                    ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
-                });
-            }
-
-            function drawLamp(intensity) {
-                const cx = W / 2, baseY = H * 0.55;
-
-                ctx.fillStyle = 'rgba(0,0,0,0.5)';
-                ctx.beginPath(); ctx.ellipse(cx, baseY + 80, 40, 8, 0, 0, Math.PI * 2); ctx.fill();
-
-                ctx.fillStyle = '#8B6914'; ctx.fillRect(cx - 30, baseY + 60, 60, 15);
-                ctx.fillStyle = '#A0822A'; ctx.fillRect(cx - 25, baseY + 55, 50, 5);
-                ctx.fillStyle = '#6B4F1A'; ctx.fillRect(cx - 8, baseY + 30, 16, 30);
-
-                ctx.fillStyle = '#C9A84C'; ctx.beginPath(); ctx.ellipse(cx, baseY + 25, 35, 12, 0, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = '#B8943A'; ctx.beginPath(); ctx.ellipse(cx, baseY + 22, 30, 8, 0, 0, Math.PI * 2); ctx.fill();
-
-                ctx.fillStyle = `rgba(255, 200, 50, ${intensity * 0.6})`;
-                ctx.beginPath(); ctx.ellipse(cx, baseY + 20, 25, 6, 0, 0, Math.PI * 2); ctx.fill();
-
-                if (intensity > 0.01) {
-                    const flicker = Math.sin(flameFlicker * 8) * 3 + Math.cos(flameFlicker * 13) * 2;
-                    const flameHeight = Math.max(5, 35 + flicker + intensity * 15);
-                    const flameWidth = Math.max(4, 16 + Math.cos(flameFlicker * 6) * 2);
-
-                    const glowRadius = Math.max(1, 80 * intensity);
-                    const gradient = ctx.createRadialGradient(cx, baseY - flameHeight/2, 1, cx, baseY - flameHeight/2, glowRadius);
-                    gradient.addColorStop(0, `rgba(255, 200, 50, ${intensity * 0.6})`);
-                    gradient.addColorStop(0.4, `rgba(255, 150, 30, ${intensity * 0.3})`);
-                    gradient.addColorStop(1, 'rgba(255, 100, 0, 0)');
-                    ctx.fillStyle = gradient;
-                    ctx.beginPath(); ctx.arc(cx, baseY - flameHeight/2, glowRadius, 0, Math.PI * 2); ctx.fill();
-
-                    const flameGradient = ctx.createLinearGradient(cx, baseY, cx, baseY - flameHeight);
-                    flameGradient.addColorStop(0, '#FF6B00');
-                    flameGradient.addColorStop(0.3, '#FF8C00');
-                    flameGradient.addColorStop(0.6, '#FFD700');
-                    flameGradient.addColorStop(0.85, '#FFF8DC');
-                    flameGradient.addColorStop(1, '#FFFFFF');
-                    ctx.fillStyle = flameGradient;
-                    ctx.beginPath();
-                    ctx.moveTo(cx - flameWidth, baseY);
-                    ctx.quadraticCurveTo(cx - flameWidth * 0.6, baseY - flameHeight * 0.5, cx, baseY - flameHeight);
-                    ctx.quadraticCurveTo(cx + flameWidth * 0.6, baseY - flameHeight * 0.5, cx + flameWidth, baseY);
-                    ctx.closePath(); ctx.fill();
-                }
-            }
-
-            function drawAnimatedMedal(type, cx, cy) {
-                const pulse = Math.sin(celebrationAnimTime * 3) * 4;
-                const radius = 35 + pulse * 0.5;
-                let color1 = '#CD7F32', color2 = '#8B5A2B';
-
-                if (type === 'silver') { color1 = '#FFFFFF'; color2 = '#78909C'; }
-                else if (type === 'gold') { color1 = '#FFF59D'; color2 = '#FBC02D'; }
-
-                ctx.save();
-                ctx.fillStyle = '#D32F2F';
-                ctx.beginPath();
-                ctx.moveTo(cx - 15, cy - radius); ctx.lineTo(cx - 28, cy - radius - 30);
-                ctx.lineTo(cx - 10, cy - radius - 30); ctx.lineTo(cx, cy - radius);
-                ctx.fill();
-
-                ctx.fillStyle = '#1976D2';
-                ctx.beginPath();
-                ctx.moveTo(cx + 15, cy - radius); ctx.lineTo(cx + 28, cy - radius - 30);
-                ctx.lineTo(cx + 10, cy - radius - 30); ctx.lineTo(cx, cy - radius);
-                ctx.fill();
-
-                const glow = ctx.createRadialGradient(cx, cy, 5, cx, cy, radius + 15);
-                glow.addColorStop(0, color1); glow.addColorStop(1, 'rgba(0,0,0,0)');
-                ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(cx, cy, radius + 15, 0, Math.PI * 2); ctx.fill();
-
-                const medalGradient = ctx.createRadialGradient(cx - 10, cy - 10, 5, cx, cy, radius);
-                medalGradient.addColorStop(0, color1); medalGradient.addColorStop(0.7, color2); medalGradient.addColorStop(1, '#3a2a0a');
-                ctx.fillStyle = medalGradient; ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.fill();
-
-                ctx.strokeStyle = '#FFF'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, radius - 3, 0, Math.PI * 2); ctx.stroke();
-                ctx.fillStyle = '#FFF'; ctx.font = 'bold 24px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.fillText('★', cx, cy - 2);
-
-                for (let i = 0; i < 4; i++) {
-                    const angle = celebrationAnimTime * 2 + (i * Math.PI / 2);
-                    const sx = cx + Math.cos(angle) * (radius + 10);
-                    const sy = cy + Math.sin(angle) * (radius + 10);
-                    ctx.fillStyle = '#FFF';
-                    ctx.beginPath(); ctx.arc(sx, sy, 2.5, 0, Math.PI * 2); ctx.fill();
-                }
-                ctx.restore();
-            }
-
-            function drawJumpingPerson(cx, baseY) {
-                const jumpY = Math.abs(Math.sin(celebrationAnimTime * 6)) * 25;
-                const py = baseY - jumpY;
-
-                ctx.save();
-                ctx.lineWidth = 3;
-                ctx.strokeStyle = '#F5E6C8';
-                ctx.fillStyle = '#F5E6C8';
-
-                const shadowScale = Math.max(0.3, 1 - (jumpY / 40));
-                ctx.fillStyle = 'rgba(0,0,0,0.4)';
-                ctx.beginPath(); ctx.ellipse(cx, baseY + 5, 20 * shadowScale, 5 * shadowScale, 0, 0, Math.PI * 2); ctx.fill();
-
-                ctx.fillStyle = '#F5E6C8';
-                ctx.beginPath(); ctx.arc(cx, py - 45, 10, 0, Math.PI * 2); ctx.fill();
-
-                ctx.strokeStyle = '#5A3D2B'; ctx.lineWidth = 2;
-                ctx.beginPath(); ctx.arc(cx, py - 44, 5, 0.1 * Math.PI, 0.9 * Math.PI); ctx.stroke();
-
-                ctx.fillStyle = '#C9A84C';
-                ctx.beginPath();
-                ctx.moveTo(cx - 12, py - 32); ctx.lineTo(cx + 12, py - 32);
-                ctx.lineTo(cx + 18, py - 4); ctx.lineTo(cx - 18, py - 4);
-                ctx.closePath(); ctx.fill();
-
-                ctx.strokeStyle = '#F5E6C8'; ctx.lineWidth = 3; ctx.lineCap = 'round';
-                ctx.beginPath(); ctx.moveTo(cx - 10, py - 28); ctx.lineTo(cx - 22, py - 45); ctx.lineTo(cx - 28, py - 58); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(cx + 10, py - 28); ctx.lineTo(cx + 22, py - 45); ctx.lineTo(cx + 28, py - 58); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(cx - 8, py - 4); ctx.lineTo(cx - 12, py + 10); ctx.moveTo(cx + 8, py - 4); ctx.lineTo(cx + 12, py + 10); ctx.stroke();
-
-                ctx.restore();
-            }
-
-            function render() {
-                flameFlicker += 0.03;
-                celebrationAnimTime += 0.03;
-                ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
-
-                if (currentEtapa === 0) {
-                    if (flameIntensity < 1.0) flameIntensity += 0.01;
-                    if (flameIntensity >= 0.3 && titleAlpha < 1.0) titleAlpha += 0.02;
-
-                    drawLamp(flameIntensity);
-                    updateSparks();
-                    drawSparks();
-
-                    if (titleAlpha > 0) {
-                        ctx.save();
-                        ctx.globalAlpha = Math.min(1, titleAlpha);
-                        const titleSize = Math.min(W * 0.12, 48);
-                        
-                        ctx.shadowColor = '#FF8C00';
-                        ctx.shadowBlur = 10;
-                        ctx.fillStyle = '#FFD700'; 
-                        ctx.font = `bold ${titleSize}px Georgia, serif`; 
-                        ctx.textAlign = 'center'; 
-                        ctx.textBaseline = 'middle';
-                        ctx.fillText('LÁMPARA', W / 2, H * 0.18);
-                        
-                        ctx.shadowBlur = 0;
-                        ctx.fillStyle = '#FFF8DC'; 
-                        ctx.font = '15px Georgia, serif';
-                        ctx.fillText('Juego Bíblico - Génesis (RVR1960)', W / 2, H * 0.27);
-                        
-                        ctx.fillStyle = 'rgba(255, 200, 100, 0.7)'; 
-                        ctx.font = 'italic 12px Georgia, serif';
-                        ctx.fillText('"Lámpara es a mis pies tu palabra..."', W / 2, H * 0.33);
-                        ctx.restore();
-                    }
-
-                    if (flameIntensity >= 0.8) {
-                        const blink = Math.sin(flameFlicker * 3) * 0.3 + 0.7;
-                        ctx.save(); ctx.globalAlpha = blink;
-                        ctx.fillStyle = '#FFF'; ctx.font = '14px Georgia, serif'; ctx.textAlign = 'center';
-                        ctx.fillText('✦ Toca la pantalla para comenzar ✦', W / 2, H * 0.78);
-                        ctx.restore();
-                    }
-                } else if (currentEtapa === 7) {
-                    let medalType = totalScore < 25 ? 'bronze' : totalScore < 50 ? 'silver' : 'gold';
-                    let quote = "";
-
-                    if (medalType === 'gold') {
-                        quote = "¡Extraordinario! Dominas las Escrituras con excelencia.";
-                    } else if (medalType === 'silver') {
-                        quote = "¡Buen trabajo! Tienes un sólido conocimiento de la Palabra.";
-                    } else {
-                        quote = "¡Sigue adelante! 'La exposición de tus palabras alumbra'.";
-                    }
-
-                    updateSparks(); drawSparks();
-                    drawJumpingPerson(W * 0.28, H * 0.55);
-                    drawAnimatedMedal(medalType, W * 0.72, H * 0.45);
-
-                    ctx.fillStyle = '#FFD700'; ctx.font = 'bold 28px Georgia, serif'; ctx.textAlign = 'center';
-                    ctx.fillText('¡FELICIDADES!', W / 2, H * 0.12);
-                    
-                    ctx.fillStyle = '#FFF'; ctx.font = 'bold 20px Georgia, serif'; 
-                    ctx.fillText(`${playerName}`, W / 2, H * 0.18);
-                    
-                    ctx.fillStyle = '#E0C060'; ctx.font = 'bold 22px Georgia, serif'; 
-                    ctx.fillText(`${totalScore} / 75 PUNTOS`, W / 2, H * 0.25);
-
-                    ctx.save();
-                    ctx.fillStyle = '#FFF8DC'; ctx.font = 'italic 13px Georgia, serif';
-                    ctx.shadowColor = 'rgba(255, 215, 0, 0.4)'; ctx.shadowBlur = 10;
-                    ctx.fillText(quote, W / 2, H * 0.70);
-                    ctx.restore();
-
-                    if (isPracticeMode) {
-                        ctx.fillStyle = '#A0822A'; ctx.font = '12px Georgia, serif';
-                        ctx.fillText('(Modo Práctica - Tu primer puntaje no ha cambiado)', W / 2, H * 0.76);
-                    }
-
-                    const blink = Math.sin(flameFlicker * 2) * 0.3 + 0.7;
-                    ctx.save(); ctx.globalAlpha = blink;
-                    ctx.fillStyle = '#AAA'; ctx.font = '13px Georgia, serif';
-                    ctx.fillText('✦ Toca la pantalla para reiniciar ✦', W / 2, H * 0.88);
-                    ctx.restore();
-                }
-
-                animationId = requestAnimationFrame(render);
-            }
-
-            // ================== DIÁLOGOS Y NAVEGACIÓN ==================
-            function showDialog(htmlContent) {
-                dialogOverlay.classList.remove('closing');
-                dialogBox.innerHTML = htmlContent;
-                dialogOverlay.classList.add('active');
-            }
-
-            function hideDialog(callback) {
-                stopQuestionTimer();
-                dialogOverlay.classList.add('closing');
-                dialogOverlay.classList.remove('active');
-                setTimeout(() => {
-                    dialogOverlay.classList.remove('closing');
-                    dialogBox.innerHTML = '';
-                    if (callback) callback();
-                }, 300);
-            }
-
-            function showStageIntro(title, description, onStartCallback) {
-                showDialog(`
-                    <h2>📜 ${title}</h2>
-                    <p class="description">${description}</p>
-                    <button id="startStageBtn">COMENZAR RETO</button>
-                `);
-
-                document.getElementById('startStageBtn').onclick = () => {
-                    hideDialog(onStartCallback);
-                };
-            }
-
-            function showRegistrationDialog() {
-                showDialog(`
-                    <h2>🕯️ LÁMPARA</h2>
-                    <p style="color:#5a3d2b; margin-bottom:8px; font-size:0.95em;">Ingresa tus datos para empezar:</p>
-                    <input type="text" id="nameInput" placeholder="Tu nombre" maxlength="20" autocomplete="off">
-                    <input type="number" id="ageInput" placeholder="Tu edad" min="5" max="120" autocomplete="off">
-                    <br>
-                    <button id="startBtn">COMENZAR JUEGO</button>
-                    <button id="leaderboardBtn" style="background:linear-gradient(180deg, #8B6914 0%, #6B4F1A 100%); border-color:#5a3d2b; margin-top:5px;">VER CLASIFICACIÓN GLOBAL</button>
-                `);
-
-                const nameInput = document.getElementById('nameInput');
-                const ageInput = document.getElementById('ageInput');
-
-                document.getElementById('startBtn').onclick = async () => {
-                    const name = nameInput.value.trim();
-                    const age = parseInt(ageInput.value);
-                    
-                    if (name && age >= 5 && age <= 120) {
-                        playerName = name; 
-                        playerAge = age;
-
-                        activeEtapa1Questions = getRandomQuestions(poolEtapa1, 5);
-                        activeEtapa2Questions = getRandomQuestions(poolEtapa2, 5);
-                        activeEtapa3Questions = getRandomQuestions(poolEtapa3, 5);
-
-                        const exists = await checkPlayerExists(playerName, playerAge);
-                        isPracticeMode = exists;
-
-                        hideDialog(prepareEtapa1);
-                    } else {
-                        playSound('wrong');
-                        if (!name) nameInput.style.borderColor = '#f44336';
-                        if (!age) ageInput.style.borderColor = '#f44336';
-                    }
-                };
-
-                document.getElementById('leaderboardBtn').onclick = async () => {
-                    showDialog(`<h2>🏆 CLASIFICACIÓN GLOBAL</h2><p style="color:#5a3d2b; margin:15px;">Cargando puntuaciones...</p>`);
-                    
-                    const scores = await getTopScores();
-                    let rows = scores.map((s, i) => `
-                        <tr>
-                            <td>${i+1}</td>
-                            <td>${s.nombre}</td>
-                            <td>${s.edad}</td>
-                            <td>${s.puntos}</td>
-                            <td>${s.medalla === 'gold' ? '🥇' : s.medalla === 'silver' ? '🥈' : '🥉'}</td>
-                        </tr>
-                    `).join('');
-
-                    if(!rows) rows = '<tr><td colspan="5" style="text-align:center;">Sin puntajes aún</td></tr>';
-                    
-                    showDialog(`
-                        <h2>🏆 CLASIFICACIÓN GLOBAL</h2>
-                        <div class="leaderboard">
-                            <table>
-                                <thead><tr><th>#</th><th>Nombre</th><th>Edad</th><th>Pts</th><th>Medalla</th></tr></thead>
-                                <tbody>${rows}</tbody>
-                            </table>
-                        </div>
-                        <button id="backBtn">VOLVER</button>
-                    `);
-                    document.getElementById('backBtn').onclick = showRegistrationDialog;
-                };
-            }
-
-            // ================== FLUJO DE ETAPAS ==================
-            function prepareEtapa1() {
-                showStageIntro(
-                    "ETAPA 1: CONOCIMIENTO BÍBLICO",
-                    "Demuestra tus conocimientos generales sobre los acontecimientos y datos clave de Génesis (RVR1960). ¡Tienes 15 segundos por pregunta!",
-                    startEtapa1
-                );
-            }
-
-            function startEtapa1() {
-                currentEtapa = 2; currentQuestionIndex = 0; totalScore = 0;
-                showQuestion(activeEtapa1Questions, 'ETAPA 1: CONOCIMIENTO');
-            }
-
-            function prepareEtapa2() {
-                showStageIntro(
-                    "ETAPA 2: ESGRIMA BÍBLICO",
-                    "Identifica en qué capítulo específico de Génesis ocurre cada acontecimiento.",
-                    startEtapa2
-                );
-            }
-
-            function startEtapa2() {
-                currentEtapa = 4; currentQuestionIndex = 0;
-                showQuestion(activeEtapa2Questions, 'ETAPA 2: ESGRIMA');
-            }
-
-            function prepareEtapa3() {
-                showStageIntro(
-                    "ETAPA 3: COMPLETA EL VERSÍCULO",
-                    "Completa la palabra faltante de los pasajes de Génesis en la versión Reina-Valera 1960.",
-                    startEtapa3
-                );
-            }
-
-            function startEtapa3() {
-                currentEtapa = 6; currentQuestionIndex = 0;
-                showQuestion(activeEtapa3Questions, 'ETAPA 3: VERSÍCULOS');
-            }
-
-            // ================== TEMPORIZADOR Y PREGUNTAS ==================
-            function startQuestionTimer(onTimeUp) {
-                stopQuestionTimer();
-                timeLeft = QUESTION_TIME_LIMIT;
-                
-                const timerBadge = document.getElementById('timerBadge');
-                const timerFill = document.getElementById('timerFill');
-                
-                if (!timerBadge || !timerFill) return;
-
-                timerInterval = setInterval(() => {
-                    timeLeft--;
-                    timerBadge.innerHTML = `⏱️ ${timeLeft}s`;
-                    
-                    const percentage = (timeLeft / QUESTION_TIME_LIMIT) * 100;
-                    timerFill.style.width = `${percentage}%`;
-
-                    if (timeLeft <= 5) {
-                        timerBadge.classList.add('urgent');
-                        timerFill.style.backgroundColor = 'var(--red)';
-                        playSound('tick');
-                    }
-
-                    if (timeLeft <= 0) {
-                        stopQuestionTimer();
-                        onTimeUp();
-                    }
-                }, 1000);
-            }
-
-            function stopQuestionTimer() {
-                if (timerInterval) {
-                    clearInterval(timerInterval);
-                    timerInterval = null;
-                }
-            }
-
-            function showQuestion(questions, etapaTitle) {
-                const q = questions[currentQuestionIndex];
-                const progress = (currentQuestionIndex / questions.length) * 100;
-
-                let questionHTML = currentEtapa === 6
-                    ? `<div class="verse-display">"${q.verse.replace('______', '<span class="verse-missing">______</span>')}"</div>`
-                    : `<p style="color:#333; font-size:0.9em; margin:4px 0; font-weight:bold; line-height:1.25;">${q.question}</p>`;
-
-                showDialog(`
-                    <h2 style="color:#5a3d2b;">${etapaTitle}</h2>
-                    ${isPracticeMode ? '<div class="status-badge">🎮 Modo Práctica</div>' : ''}
-                    <div class="timer-container">
-                        <span style="color:#8B6914; font-size:0.75em;">Pregunta ${currentQuestionIndex + 1} de ${questions.length}</span>
-                        <div class="timer-badge" id="timerBadge">⏱️ ${QUESTION_TIME_LIMIT}s</div>
-                    </div>
-                    <div class="timer-bar"><div class="timer-fill" id="timerFill"></div></div>
-                    <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
-                    <div class="score-display">⭐ ${totalScore} pts</div>
-                    ${questionHTML}
-                    <div class="options-container">
-                        ${q.options.map((opt, idx) => `<button class="option-btn" data-index="${idx}">${String.fromCharCode(65 + idx)}. ${opt}</button>`).join('')}
-                    </div>
-                `);
-
-                startQuestionTimer(() => {
-                    handleAnswer(-1, q.correct, questions, etapaTitle);
-                });
-
-                document.querySelectorAll('.option-btn').forEach(btn => {
-                    btn.onclick = (e) => {
-                        stopQuestionTimer();
-                        const selected = parseInt(e.target.dataset.index);
-                        handleAnswer(selected, q.correct, questions, etapaTitle);
-                    };
-                });
-            }
-
-            function handleAnswer(selected, correct, questions, etapaTitle) {
-                stopQuestionTimer();
-                const buttons = document.querySelectorAll('.option-btn');
-                
-                buttons.forEach((btn, idx) => {
-                    btn.disabled = true;
-                    if (idx === correct) { btn.classList.add('correct'); btn.innerHTML += ' ✓'; }
-                    if (idx === selected && idx !== correct) { btn.classList.add('incorrect'); btn.innerHTML += ' ✗'; }
-                });
-
-                if (selected === correct) {
-                    totalScore += 5; playSound('correct');
-                } else {
-                    playSound('wrong');
-                }
-
-                setTimeout(() => {
-                    hideDialog(() => {
-                        currentQuestionIndex++;
-                        if (currentQuestionIndex < questions.length) {
-                            showQuestion(questions, etapaTitle);
-                        } else {
-                            setTimeout(() => {
-                                if (currentEtapa === 2) {
-                                    prepareEtapa2();
-                                } else if (currentEtapa === 4) {
-                                    prepareEtapa3();
-                                } else if (currentEtapa === 6) {
-                                    showFinalScreen();
-                                }
-                            }, 300);
-                        }
-                    });
-                }, 1500);
-            }
-
-            async function showFinalScreen() {
-                currentEtapa = 7;
-                stopQuestionTimer();
-                let medalType = totalScore < 25 ? 'bronze' : totalScore < 50 ? 'silver' : 'gold';
-                
-                await saveSupabaseScore(playerName, playerAge, totalScore, medalType);
-                playSound('win');
-            }
-
-            // ================== EVENTOS Y CONTROLES TÁCTILES ==================
-            function handleInteraction(e) {
-                initAudio();
-                if (!canClick) return;
-
-                if (currentEtapa === 0) {
-                    canClick = false;
-                    showRegistrationDialog();
-                    setTimeout(() => canClick = true, 500);
-                } else if (currentEtapa === 7) {
-                    canClick = false;
-                    location.reload();
-                }
-            }
-
-            canvas.addEventListener('click', handleInteraction);
-            canvas.addEventListener('touchstart', (e) => {
-                if (currentEtapa === 0 || currentEtapa === 7) {
-                    e.preventDefault();
-                    handleInteraction();
-                }
-            }, { passive: false });
-
-            render();
-        });
-    </script>
 </body>
 </html>
